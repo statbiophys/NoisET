@@ -36,3 +36,8 @@ Clonal Expansion:
 TCR dynamics as a short time scale for the bulk repertoire:
 - Find a way to learn the likelihood estimator for a trajectory that is not Markovian (propagator of a trajectory) for the 3 dynamics model.
 -  Same for a long-time scale. (In the article put other parameters CD4/CD8, naive/memory).
+
+
+```python 
+import NoisEttes
+
