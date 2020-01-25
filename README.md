@@ -10,6 +10,7 @@ NoisEttes can be installed using python pip.
 pip install NoisEttes
 
 
+```
 
 ## Noise Model:
 
@@ -49,4 +50,5 @@ TCR dynamics as a short time scale for the bulk repertoire:
 
 ```python 
 import NoisEttes
+```
 
