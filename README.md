@@ -13,10 +13,10 @@ Not the same class of functions:
 Choose the model choosing a keyword:
 
 One class for RNA sequences Noise Models:
-> fourth cases. 
-> output: the learning of the parameters of the model.
-> 1-step: Poisson (counting) / Negative Binomial (counting)
-> 2-steps : NegativeBinomial + Poisson / Poisson + NegativeBinomial 
+- fourth cases. 
+- output: the learning of the parameters of the model.
+- 1-step: Poisson (counting) / Negative Binomial (counting)
+- 2-steps : NegativeBinomial + Poisson / Poisson + NegativeBinomial 
 
 
 One class for gDNA sequences (motivation Harlan Robins Adaptive Data - look at the current noise of the data for these replicates)
