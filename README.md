@@ -4,6 +4,8 @@
 
 ## Noise Model:
 
+</br>
+
 (Put a filter + Visualization )
 
 Not the same class of functions:
