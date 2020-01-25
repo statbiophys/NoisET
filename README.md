@@ -1,6 +1,7 @@
 # NoisyDiff
 
 <https://arxiv.org/pdf/1912.08304.pdf>
+
 ----------------------------------------------------------------------------------------------------------------------------
 
 ## Installation
@@ -9,8 +10,6 @@ NoisEttes can be installed using python pip.
 
 ```console
 pip install NoisEttes
-
-
 ```
 
 ## Noise Model:
