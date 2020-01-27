@@ -1,4 +1,4 @@
-# NoisyDiff
+# NoisEttes
 
 <https://arxiv.org/pdf/1912.08304.pdf>
 
