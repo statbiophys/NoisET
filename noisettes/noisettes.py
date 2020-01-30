@@ -1034,7 +1034,7 @@ class Diffexpr:
         ds = np.diff(svec)/2
         N_obs = np.sum(sparse_rep_counts)
         
-        def score(PARAS):
+        def cost(PARAS):
 
             alp = PARAS[0]
             sbar = PARAS[1]
@@ -1054,9 +1054,9 @@ class Diffexpr:
                 P_cond = np.dot(sparse_rep_counts, integ)
                 C = N_obs*np.log(P_cond)
 
-            score =  - np.dot(sparse_rep_counts,np.log(integ)) + C 
+            cost =  - np.dot(sparse_rep_counts,np.log(integ)) + C 
             
-            return score 
+            return cost 
 
     #--------------------------Compute-the-grid-----------------------------------------
     
@@ -1070,7 +1070,7 @@ class Diffexpr:
         LSurface =np.zeros((len(alpvec),len(sbarvec)))
         for i in tqdm(range(len(alpvec))):
             for j in range(len(sbarvec)):
-                LSurface[i, j]=  - score([alpvec[i], sbarvec[j]])
+                LSurface[i, j]=  - cost([alpvec[i], sbarvec[j]])
     
         sbarmesh, alpmesh = np.meshgrid(sbarvec,alpvec)
         a,b = np.where(LSurface == np.max(LSurface))
@@ -1194,7 +1194,7 @@ class Diffexpr:
         ds = np.diff(svec)/2
         N_obs = np.sum(sparse_rep_counts)
         
-        def score(PARAS):
+        def cost(PARAS):
 
             A = PARAS[0]
             B = PARAS[1]
@@ -1214,8 +1214,8 @@ class Diffexpr:
                 P_cond = np.dot(sparse_rep_counts, integ)
                 C = N_obs*np.log(P_cond)
 
-            score =  - np.dot(sparse_rep_counts,np.log(integ)) + C 
-            return score 
+            cost =  - np.dot(sparse_rep_counts,np.log(integ)) + C 
+            return cost 
 
     #--------------------------Compute-the-grid-----------------------------------------
     
@@ -1229,7 +1229,7 @@ class Diffexpr:
         LSurface =np.zeros((len(Bvec),len(Avec)))
         for i in tqdm(range(len(Bvec))):
             for j in range(len(Avec)):
-                LSurface[i, j]=  - score([Avec[j], Bvec[i]])
+                LSurface[i, j]=  - cost([Avec[j], Bvec[i]])
     
         Amesh, Bmesh = np.meshgrid(Avec,Bvec)
         a,b = np.where(LSurface == np.max(LSurface))
@@ -1343,7 +1343,7 @@ class Diffexpr:
     
 
     ds = np.diff(svec)/2
-    def score(PARAS):
+    def cost(PARAS):
         A = PARAS[0]
         B = PARAS[1]
         
@@ -1351,13 +1351,13 @@ class Diffexpr:
         for it,(n1_it, n2_it) in enumerate(zip(indn1,indn2)):
             Pn1n2_ps = Pn1n2_s[:,it]* self.get_Ps_diffusion(svec, A, B, t)
             integ[it] = np.dot(ds, Pn1n2_ps[1:] + Pn1n2_ps[:-1])
-            
+
         P_cond = np.dot(sparse_rep_counts, integ) 
         N_obv = np.sum(sparse_rep_counts)
         C = N_obv*np.log(P_cond)
-        Score = - np.dot(sparse_rep_counts,np.log(integ)) + C
+        cost = - np.dot(sparse_rep_counts,np.log(integ)) + C
         
-        return Score
+        return cost
     
     
     #-----------------------------COMPUTE-THE-GRID-------------------------------------------------------------
@@ -1373,7 +1373,7 @@ class Diffexpr:
     LSurface  = np.zeros((len(Bvec),len(Avec)))
     for i in tqdm(range(len(Bvec))):
         for j in range(len(Avec)):
-            LSurface[i, j]= - score([Avec[j], Bvec[i]])
+            LSurface[i, j]= - cost([Avec[j], Bvec[i]])
                   
     Amesh, Bmesh = np.meshgrid(Avec,Bvec)
     a,b = np.where(LSurface == np.max(LSurface))
@@ -1388,7 +1388,7 @@ class Diffexpr:
     
     bnds = ((None, None), (0.001, None))
 
-    outstruct = minimize(score, initparas, method='SLSQP', callback=callbackFdiffexpr, tol=1e-6,options={'ftol':1e-8 ,'disp': True,'maxiter':300}, bounds=bnds)
+    outstruct = minimize(cost, initparas, method='SLSQP', callback=callbackFdiffexpr, tol=1e-6,options={'ftol':1e-8 ,'disp': True,'maxiter':300}, bounds=bnds)
 
     
     return outstruct.x
