@@ -4,7 +4,7 @@ with open("README.md", "r") as fh :
     long_description = fh.read
 
 setuptools.setup(
-    name='noisydiff',
+    name='noisettes',
     version= "0.0.1",
     author="Meriem Bensouda",
     author_email="meriem.bensoudakoraichi@gmail.com",
