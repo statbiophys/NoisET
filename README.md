@@ -1,10 +1,19 @@
-# NoisEttes
+# NoisEts
 
 <https://arxiv.org/pdf/1912.08304.pdf>
 
 ----------------------------------------------------------------------------------------------------------------------------
 
 ## Installation
+
+To install Noisets, git clone the file ijn your working environment. 
+Using terminal, go inside the NoisEts directory and write the following command : 
+
+```console
+sudo python setup.py install
+```
+
+Once done, you will be able to import noisets as introduced in the noisets examples files.
 
 NoisEttes can be installed using python pip.
 
