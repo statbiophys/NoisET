@@ -14,11 +14,14 @@ sudo python setup.py install
 ```
 
 Once done, you will be able to import noisets as introduced in the noisets examples files.
+```python 
+import noisets
+```
 
-NoisEttes can be installed using python pip.
+NoisEttes can be installed using python pip. (not yet allowed!)
 
 ```console
-pip install NoisEttes
+pip install noisets
 ```
 
 ## Noise Model:
@@ -57,7 +60,4 @@ TCR dynamics as a short time scale for the bulk repertoire:
 -  Same for a long-time scale. (In the article put other parameters CD4/CD8, naive/memory).
 
 
-```python 
-import NoisEttes
-```
 
