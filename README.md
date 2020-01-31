@@ -35,7 +35,7 @@ Not the same class of functions:
 Choose the model choosing a keyword:
 
 One class for RNA sequences Noise Models:
-- fourth cases. 
+- four cases. 
 - output: the learning of the parameters of the model.
 - 1-step: Poisson (counting) / Negative Binomial (counting)
 - 2-steps : NegativeBinomial + Poisson / Poisson + NegativeBinomial 
