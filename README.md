@@ -1,4 +1,4 @@
-# NoisEts
+# NoisEts (NOISe sampling inference & Expansion of Tcr-repertoires dynamicS.)
 
 <https://arxiv.org/pdf/1912.08304.pdf>
 
@@ -18,7 +18,7 @@ Once done, you will be able to import noisets as introduced in the noisets examp
 import noisets
 ```
 
-NoisEttes can be installed using python pip. (not yet allowed!)
+NoisEts can be installed using python pip. (not yet allowed!)
 
 ```console
 pip install noisets
