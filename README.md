@@ -8,7 +8,7 @@
 
 ## Installation
 
-To install Noisets, git clone the file ijn your working environment. 
+To install Noisets, git clone the file in your working environment. 
 Using terminal, go inside the NoisEts directory and write the following command : 
 
 ```console
