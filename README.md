@@ -1,4 +1,4 @@
-# NoisEts (sampling NOISe & Expansion of T-cells  bayesian inference.)
+# NoisEt (sampling NOISe & Expansion of T-cells  bayesian inference.)
 
 !!! Still in construction 
 
