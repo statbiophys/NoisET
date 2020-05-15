@@ -1,4 +1,4 @@
-# NoisEts (NOISe sampling inference & Expansion of Tcr-repertoires dynamicS.)
+# NoisEts (sampling NOISe & Expansion of T-cells  bayesian inference.)
 
 !!! Still in construction 
 
