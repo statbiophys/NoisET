@@ -1,4 +1,4 @@
-# NoisET  sampling NOIse & Expansion of T-cells.)
+# NoisET  sampling NOIse & Expansion of T-cells.
 NoisET is a computational tool allowing to assess sampling noise [ref] and detect responding Tcells clones to a given stimuli using bayesian inference 
 and RepSeq longitudinal data.
 
