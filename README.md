@@ -1,4 +1,5 @@
 # NoisET  NOIse sampling learning & Expansion detection of T-cell receptors using Bayesian inference.
+(NoisET should be pronounced like noisettes (aka nuts in French)).
 NoisET is an easy-to-use Python package allowing to assess sampling noise [ref] and detect responding Tcells clones to a given stimulus using Bayesian inference 
 and RepSeq longitudinal data.
 Statistical Model used in this package are described in <https://arxiv.org/pdf/1912.08304.pdf>.
@@ -25,11 +26,12 @@ NoisET can be installed using python pip. (not yet allowed!)
 pip install noisets
 ```
 
-## Noise Model:
+## First function : Noise Model
 
 </br>
 
-(Put a filter + Visualization )
+First function of NoisET is to infer statistical null model of sequence counts and variability, using RepSeq experiments.
+In the main code file noisettes.py, this function is refered under the class Experimental_Noise_Model. In the first notebook, 
 
 Not the same class of functions:
 
