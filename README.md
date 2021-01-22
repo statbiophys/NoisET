@@ -31,9 +31,12 @@ pip install noisets
 </br>
 
 First function of NoisET is to infer statistical null model of sequence counts and variability, using RepSeq experiments.
-In the main code file noisettes.py, this function is refered under the class Experimental_Noise_Model. In the first notebook, 
+In the main code file noisettes.py, this function is associated to the class Experimental_Noise_Model. In the notebook [Null Model Learning],
+replicates of patient $S_1$ from [Pogorelyy PNASref] are used to extract sampling noise dispersion.
 
-Not the same class of functions:
+!! default input : initial parameters, maxcount mincount
+
+To learn the null model, the acquisition model type - noise model (acq_model_type)
 
 Choose the model choosing a keyword:
 
