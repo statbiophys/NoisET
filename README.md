@@ -1,17 +1,14 @@
 # NoisET  sampling NOIse & Expansion of T-cells.
-NoisET is a computational tool allowing to assess sampling noise [ref] and detect responding Tcells clones to a given stimuli using bayesian inference 
+NoisET is an easy-to-use Python package allowing to assess sampling noise [ref] and detect responding Tcells clones to a given stimulus using Bayesian inference 
 and RepSeq longitudinal data.
-
-!!! Still in construction 
-
 <https://arxiv.org/pdf/1912.08304.pdf>
 
 ----------------------------------------------------------------------------------------------------------------------------
 
 ## Installation
 
-To install Noisets, git clone the file in your working environment. 
-Using terminal, go inside the NoisEts directory and write the following command : 
+To install NoisET, git clone the file in your working environment. 
+Using terminal, go inside NoisET directory and write the following command : 
 
 ```console
 sudo python setup.py install
@@ -21,8 +18,7 @@ Once done, you will be able to import noisets as introduced in the noisets examp
 ```python 
 import noisets
 ```
-
-NoisEts can be installed using python pip. (not yet allowed!)
+NoisET can be installed using python pip. (not yet allowed!)
 
 ```console
 pip install noisets
