@@ -30,40 +30,27 @@ pip install noisets
 
 </br>
 
+### Infer the model
 First function of NoisET is to infer statistical null model of sequence counts and variability, using RepSeq experiments.
 In the main code file noisettes.py, this function is associated to the class Experimental_Noise_Model. In the notebook [Null Model Learning],
-replicates of patient $S_1$ from [Pogorelyy PNASref] are used to extract sampling noise dispersion.
+replicates of patient $S_1$ from [Pogorelyy PNASref] are used to extract sampling noise dispersion. An other example using replicates from another technology () is also displayed in the notebook.
 
 !! default input : initial parameters, maxcount mincount
 
-To learn the null model, the acquisition model type - noise model (acq_model_type)
+To learn the null model, the user should choose one of  the fourth noise model : noise_model 
+noise_model:
+- 0 : NB + Poisson / 5 parameters
+- 1 : NB / 4 parameters
+- 2 : Poisson / 2 parameters
 
-Choose the model choosing a keyword:
+### Check the model
 
-One class for RNA sequences Noise Models:
-- four cases. 
-- output: the learning of the parameters of the model.
-- 1-step: Poisson (counting) / Negative Binomial (counting)
-- 2-steps : NegativeBinomial + Poisson / Poisson + NegativeBinomial 
+## Second function: Differential Expression: 
 
-
-One class for gDNA sequences (motivation Harlan Robins Adaptive Data - look at the current noise of the data for these replicates)
-- limiting branching Process 
+To detect responding clonotypes, the user provides, in addtion to the two datasets to be compared, two sets of experimental noise parameters learnt at both times
+using the first function. 
 
 
-## Differential Expression: 
-
-- Max’s propagator  (choosing one of the null model + implementing the parameters that have been learnt before)
-- Diffusion propagator (A, B, fluctuating fitness per clone) / check the frequency dependency.) 
-- Birth-and-Death propagator;
-
-Application:
-Clonal Expansion:
-- look at the differences between these 3 methods to be able to discriminate responding clones / also comparison with edgeR
-
-TCR dynamics as a short time scale for the bulk repertoire:
-- Find a way to learn the likelihood estimator for a trajectory that is not Markovian (propagator of a trajectory) for the 3 dynamics model.
--  Same for a long-time scale. (In the article put other parameters CD4/CD8, naive/memory).
 
 
 
