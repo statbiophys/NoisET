@@ -15,7 +15,7 @@ Using terminal, go inside NoisET directory and write the following command :
 sudo python setup.py install
 ```
 
-Once done, you will be able to import noisets as introduced in the noisets examples files.
+Once done, you will be able to import NoisET as introduced in the NoisET examples files.
 ```python 
 import noisets
 ```
