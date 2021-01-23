@@ -45,6 +45,8 @@ noise_model:
 
 ### Check the model
 
+
+
 ## Second function: Differential Expression: 
 
 To detect responding clonotypes, the user provides, in addtion to the two datasets to be compared, two sets of experimental noise parameters learnt at both times
