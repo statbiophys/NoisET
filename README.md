@@ -1,8 +1,14 @@
 # NoisET  NOIse sampling learning & Expansion detection of T-cell receptors using Bayesian inference.
 (NoisET should be pronounced like "noisettes" (aka nuts in French)).
-NoisET is an easy-to-use Python package allowing to assess sampling noise [ref] and detect responding Tcells clones to a given stimulus using Bayesian inference 
-and RepSeq longitudinal data.
-Statistical Model used in this package are described in <https://arxiv.org/pdf/1912.08304.pdf>.
+High-throughput sequencing of T- and B-cell receptors makes it possible to track immune
+repertoires across time, in different tissues, in acute and chronic diseases or in healthy individuals. However
+quantitative comparison between repertoires is confounded by variability in the read count of each receptor
+clonotype due to sampling, library preparation, and expression noise. We present an easy-to-use python
+package NoisET that implements and generalizes a previously developed Bayesian method [Puelma Touzel et al, 2020](<https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1007873&rev=2>). It can be used
+to learn experimental noise models for repertoire sequencing from replicates, and to detect responding
+clones following a stimulus. The package was tested on different repertoire sequencing technologies and
+datasets.
+
 NoisET package is desribed in  <https://arxiv.org/pdf/1912.08304.pdf> #change the arxiv file to NoisET file
 
 ----------------------------------------------------------------------------------------------------------------------------
