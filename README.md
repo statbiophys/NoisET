@@ -15,7 +15,7 @@ NoisET package is desribed in  <https://arxiv.org/pdf/1912.08304.pdf> #change th
 
 # Installation
 
-Python 3 \
+Python 3 
 
 To install NoisET, gitclone the file in your working environment. 
 Using terminal, go inside NoisET directory and write the following command : 
