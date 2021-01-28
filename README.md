@@ -161,4 +161,6 @@ from noisets import noisettes as ns
 ```
 You can download Jupyter notebook and modify it with your own PATHTODATA / datafile specificities - visualization tools are also provided.
 
-# Methods
+# Contact
+
+Any issues or questions should be addressed to [us](mailto:meriem.bensoudakoraichi@gmail.com).
