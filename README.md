@@ -34,7 +34,8 @@ pip install noisets
 
 ## Command Lines:
 
-<img src="docs/commandline-noise.png" />
+At the command prompt, type ` (env) machine: user$ noiset-noise --NB --freq 'Clone fraction' --counts 'Clone count' --ntCDR3 'N. Seq CDR3' --AACDR3 'AA. Seq. CDR3' --path 'data_example/' --f1 'S1_0_F1_.txt' --f2 'S1_0_F2_.txt' `
+
 
 ## First function : Noise Model
 
