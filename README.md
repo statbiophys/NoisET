@@ -150,6 +150,13 @@ At the command prompt, type
 ```console
 $ noiset-detection --NB  --nullpara1 '../data_examples/parameters_1.npy' --nullpara2 '../data_examples/parameters_1.npy' --path '../data_examples/' --f1 'Q1_0_F1_.txt' --f2 'Q1_15_F1_.txt' --pval 0.05 --smedthresh 0 
 ```
-At the command prompt, type 
+ ### B/ Python Package 
+
+For Python users, it is possible to use NoisET as a package importing it as mentioned before. A jupyter notebook explaining the use of all the functions of interest is provided: NoisET example - detection responding clones.ipynb
+```python 
+import noisets
+from noisets import noisettes as ns
+```
+You can download Jupyter notebook and modify it with your own PATHTODATA / datafile specificities - vizualization tools are also provided.
 
 # Methods
