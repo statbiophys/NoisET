@@ -21,11 +21,6 @@ Using terminal, go inside NoisET directory and write the following command :
 ```console
 sudo python setup.py install
 ```
-
-Once done, you will be able to import NoisET as introduced in the NoisET examples files.
-```python 
-import noisets
-```
 NoisET can be installed using python pip. (not yet allowed!)
 
 ```console
@@ -33,9 +28,10 @@ pip install noisets
 ```
 
 # Documentation
-## 1/Command Lines:
 
-### 1/ Infer Noise Model
+## 1/ Infer Noise Model 
+
+### A/ Command Line
 
 To Infer Null Model noise: NoisET first function (1), use the command `noiset-noise`
 Several options are needed to learn noise model from two replicates samples associated to one individual at a specific time point:
@@ -65,6 +61,19 @@ At the command prompt, type:
 ```console
 (env) machine: user$ noiset-noise --path '../data_examples/' --f1 'Q1_0_F1_.txt' --f2 'Q1_0_F2_.txt' --NB
 ```
+A .npy file is created in the working directory: it is a 5/4/2 parameters vector depending of the choise of NBP/NB/Poisson noise model.
+You can run previous example using data provided in data_examples folder - data from [Precise tracking of vaccine-responding T cell clones reveals convergent and personalized response in identical twins, Pogorelyy et al, PNAS](https://www.pnas.org/content/115/50/12704) 
+
+### B/ Python Package 
+
+For Python users, it is possible to use NoisET as a package importing it as mentioned before. A jupyter notebook explaining the use of all the functions of interest is provided: NoisET example - Null model learning.ipynb
+```python 
+import noisets
+from noisets import noisettes as ns
+```
+You can download Jupyter notebook and modify it with your own PATHTODATA / datafile specificities.
+
+
 
 To generate biological replicates - to check consistency with experiments 
 At the command prompt, type ` (env) machine: user$ noiset-nullgenerator --NB --NreadsI 25000 --NreadsII 25000 --Nclones 20000 --filename 'test' --nullpara '../data_examples/parameters_1.npy'  `
