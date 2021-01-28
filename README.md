@@ -84,11 +84,11 @@ As before `--NBP`, `--NB`, or `--Poisson`.
 #### 2/ Specify learnt parameters:
 `--nullpara 'PATH/FOLDER/NULLPARAS.npy'`: parameters learnt thanks to NoisET function (1) \
 !!! Watch out to match correctly the noise model and the null parameters file content : 5 parameters for `--NBP`, 4 parameters for `--NB`and 2 parameters
-for `--Poisson`. \
+for `--Poisson`. 
 
 #### 3/ Sequencing properties of data:
-`--NreadsI NNNN`: total number  of reads in first replicate - it should match the actual data.
-`--Nreads2 NNNN`: total number  of reads in second replicate - it should match the actual data.
+`--NreadsI NNNN`: total number  of reads in first replicate - it should match the actual data. \
+`--Nreads2 NNNN`: total number  of reads in second replicate - it should match the actual data. \
 `--Nclones NNNN`: total number of clones in union of two replicates.
 
 ### 4/ output pile
