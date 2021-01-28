@@ -45,10 +45,10 @@ Several options are needed to learn noise model from two replicates samples asso
 If your TCRs CDR3 clonal populations features (ie clonal fractions, clonal counts, clonal nucleotides CDR3 sequences and clonal amino acids sequences) have different column names than (respectively): ('Clone fraction', 'Clone count', 'N. Seq. CDR3', 'AA. Seq. CDR3), you can specify it by using: 
 
 `--specify` \
-`--freq 'frequency'` : Column label associated to the clonal fraction \
-`--counts 'counts'`:  Column label associated to the clonal count  \
-`--ntCDR3 'ntCDR3'`:  Column label associated to the clonal CDR3 nucleotides sequence  \
-`--AACDR3 'AACDR3'`:  Column label associated to the clonal CDR3 amino acid sequence
+`--freq 'frequency'` : Column label associated to clonal fraction \
+`--counts 'counts'`:  Column label associated to clonal count  \
+`--ntCDR3 'ntCDR3'`:  Column label associated to clonal CDR3 nucleotides sequence  \
+`--AACDR3 'AACDR3'`:  Column label associated to clonal CDR3 amino acid sequence
 
 
 #### 2/ Choice of noise model: (described in Methods section)
@@ -89,7 +89,7 @@ for `--Poisson`.
 #### 3/ Sequencing properties of data:
 `--NreadsI NNNN`: total number  of reads in first replicate - it should match the actual data. \
 `--Nreads2 NNNN`: total number  of reads in second replicate - it should match the actual data. \
-`--Nclones NNNN`: total number of clones in union of two replicates.
+`--Nclones NNNN`: total number of clones in union of two replicates - it should match the actual data.
 
 ### 4/ output pile
 `--filename 'SYNTHETICDATA'`: name of the output file where you can find the synthetic data set. 
