@@ -32,6 +32,10 @@ NoisET can be installed using python pip. (not yet allowed!)
 pip install noisets
 ```
 
+## Command Lines:
+
+<img src="docs/commandline-noise.png" width="150" />
+
 ## First function : Noise Model
 
 </br>
