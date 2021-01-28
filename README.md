@@ -109,7 +109,7 @@ For Python users, it is possible to use NoisET as a package importing it as ment
 import noisets
 from noisets import noisettes as ns
 ```
-You can download Jupyter notebook and modify it with your own PATHTODATA / datafile specificities - vizualization tools are also provided.
+You can download Jupyter notebook and modify it with your own PATHTODATA / datafile specificities - visualization tools are also provided.
 
 
  ## 3/ Detect Responding clones:
@@ -159,6 +159,6 @@ For Python users, it is possible to use NoisET as a package importing it as ment
 import noisets
 from noisets import noisettes as ns
 ```
-You can download Jupyter notebook and modify it with your own PATHTODATA / datafile specificities - vizualization tools are also provided.
+You can download Jupyter notebook and modify it with your own PATHTODATA / datafile specificities - visualization tools are also provided.
 
 # Methods
