@@ -13,7 +13,7 @@ NoisET package is desribed in  <https://arxiv.org/pdf/1912.08304.pdf> #change th
 
 ----------------------------------------------------------------------------------------------------------------------------
 
-## Installation
+# Installation
 
 To install NoisET, git clone the file in your working environment. 
 Using terminal, go inside NoisET directory and write the following command : 
@@ -32,10 +32,21 @@ NoisET can be installed using python pip. (not yet allowed!)
 pip install noisets
 ```
 
-## Command Lines:
+# Documentation
+## 1/Command Lines:
 
-To Infer Null Model noise: NoisET first function (1)
-At the command prompt, type ` (env) machine: user$ noiset-noise --NB --freq 'Clone fraction' --counts 'Clone count' --ntCDR3 'N. Seq CDR3' --AACDR3 'AA. Seq. CDR3' --path '../data_examples/' --f1 'Q1_0_F1_.txt' --f2 'Q1_0_F2_.txt' `
+### 1/ Infer Noise Model
+
+To Infer Null Model noise: NoisET first function (1), use the command `noiset-noise`
+Several options are needed to learn noise model from two replicates samples associated to one individual at a specific time point:
+
+#### 1/ Choice of noise model:
+`--NBPoisson`: Negative Binomial + Poisson Noise Model - 5 parameters
+`--NB`: Negative Binomial - 4 parameters 
+`--Poisson`: Poisson - 2 parameters 
+
+At the command prompt, type:
+` (env) machine: user$ noiset-noise --NB --freq 'Clone fraction' --counts 'Clone count' --ntCDR3 'N. Seq CDR3' --AACDR3 'AA. Seq. CDR3' --path '../data_examples/' --f1 'Q1_0_F1_.txt' --f2 'Q1_0_F2_.txt' `
 
 To generate biological replicates - to check consistency with experiments 
 At the command prompt, type ` (env) machine: user$ noiset-nullgenerator --NB --NreadsI 25000 --NreadsII 25000 --Nclones 20000 --filename 'test' --nullpara '../data_examples/parameters_1.npy'  `
