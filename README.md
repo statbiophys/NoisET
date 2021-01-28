@@ -40,7 +40,7 @@ At the command prompt, type ` (env) machine: user$ noiset-noise --NB --freq 'Clo
 To generate biological replicates - to check consistency with experiments 
 At the command prompt, type ` (env) machine: user$ noiset-nullgenerator --NB --NreadsI 25000 --NreadsII 25000 --Nclones 20000 --filename 'test' --nullpara 'data_example/parameters_1.npy'  `
 
-To detect responding clones to a stimulus: NoisET second function (1)
+To detect responding clones to a stimulus: NoisET second function (2)
 At the command prompt, type ` (env) machine: user$ noiset-detection --NB --freq 'Clone fraction' --counts 'Clone count' --ntCDR3 'N. Seq CDR3' --AACDR3 'AA. Seq. CDR3' --path 'data_example/' --f1 'S1_0_F1_.txt' --f2 'S1_15_F1_.txt' --nullpara1 'parameters_1.npy' --nullpara2 'parameters_2.npy' --pval 0.05 --smedthresh 0  `
 
 
