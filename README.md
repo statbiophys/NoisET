@@ -15,6 +15,8 @@ NoisET package is desribed in  <https://arxiv.org/pdf/1912.08304.pdf> #change th
 
 # Installation
 
+Python 3 \
+
 To install NoisET, gitclone the file in your working environment. 
 Using terminal, go inside NoisET directory and write the following command : 
 
@@ -122,7 +124,7 @@ As before `--NBP`, `--NB`, or `--Poisson`.
 #### 2/ Specify learnt parameters for both time points:
 (they can be the same for both time points if replicates are not available but to use carefully as mentioned in [ARTICLE]) \
 `--nullpara1 'PATH/FOLDER/NULLPARAS1.npy'`: parameters learnt thanks to NoisET function (1) for time 1 \
-`--nullpara2 'PATH/FOLDER/NULLPARAS2.npy'`: parameters learnt thanks to NoisET function (1) for time 2  \
+`--nullpara2 'PATH/FOLDER/NULLPARAS2.npy'`: parameters learnt thanks to NoisET function (1) for time 2  
 
 !!! Watch out to match correctly the noise model and the null parameters file content : 5 parameters for `--NBP`, 4 parameters for `--NB`and 2 parameters
 for `--Poisson`. 
@@ -131,7 +133,7 @@ for `--Poisson`.
 
 `--path 'PATHTODATA'`: set path to data file \
 `--f1 'FILENAME1_X_time1'`: filename for individual X time 1 \
-`--f2 'FILENAME2_X_time2'`: filename for individual X time 2 \
+`--f2 'FILENAME2_X_time2'`: filename for individual X time 2 
 
 If your TCRs CDR3 clonal populations features (ie clonal fractions, clonal counts, clonal nucleotides CDR3 sequences and clonal amino acids sequences) have different column names than (respectively): ('Clone fraction', 'Clone count', 'N. Seq. CDR3', 'AA. Seq. CDR3), you can specify it by using: 
 
