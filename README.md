@@ -15,7 +15,7 @@ NoisET package is desribed in  <https://arxiv.org/pdf/1912.08304.pdf> #change th
 
 # Installation
 
-To install NoisET, git clone the file in your working environment. 
+To install NoisET, gitclone the file in your working environment. 
 Using terminal, go inside NoisET directory and write the following command : 
 
 ```console
