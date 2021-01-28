@@ -19,12 +19,12 @@ To install NoisET, gitclone the file in your working environment.
 Using terminal, go inside NoisET directory and write the following command : 
 
 ```console
-sudo python setup.py install
+$ sudo python setup.py install
 ```
 NoisET can be installed using python pip. (not yet allowed!)
 
 ```console
-pip install noisets
+$ pip install noisets
 ```
 
 # Documentation
@@ -59,7 +59,7 @@ If your TCRs CDR3 clonal populations features (ie clonal fractions, clonal count
 #### 3/ Example:
 At the command prompt, type:
 ```console
-(env) machine: user$ noiset-noise --path '../data_examples/' --f1 'Q1_0_F1_.txt' --f2 'Q1_0_F2_.txt' --NB
+$ noiset-noise --path '../data_examples/' --f1 'Q1_0_F1_.txt' --f2 'Q1_0_F2_.txt' --NB
 ```
 This command line will learn four parameters associated to Negative Binomial Noise Model `--NB` for individual Q1 of the associated study at day 0.
 A .npy file is created in the working directory: it is a 5/4/2 parameters vector depending of the choise of NBP/NB/Poisson noise model.
@@ -79,14 +79,14 @@ You can download Jupyter notebook and modify it with your own PATHTODATA / dataf
 To check qualitatively consistency of NoisET first function (1) with experiments or for other reasons, it can be useful to generates synthetic replicates from null model (described in Methods section).
 
  At the command prompt, type 
- ```console (env) machine: user$ noiset-nullgenerator --NB --NreadsI 25000 --NreadsII 25000 --Nclones 20000 --filename 'test' --nullpara '../data_examples/parameters_1.npy'  
+ ```$ noiset-nullgenerator --NB --NreadsI 25000 --NreadsII 25000 --Nclones 20000 --filename 'test' --nullpara '../data_examples/parameters_1.npy'  
  ```
  
  
 
 To detect responding clones to a stimulus: NoisET second function (2)
 At the command prompt, type 
-```console (env) machine: user$ noiset-detection --NB --freq 'Clone fraction' --counts 'Clone count' --ntCDR3 'N. Seq CDR3' --AACDR3 'AA. Seq. CDR3' --path '../data_examples/' --f1 'Q1_0_F1_.txt' --f2 'Q1_15_F1_.txt' --nullpara1 'parameters_1.npy' --nullpara2 'parameters_1.npy' --pval 0.05 --smedthresh 0  `
+```$ noiset-detection --NB --freq 'Clone fraction' --counts 'Clone count' --ntCDR3 'N. Seq CDR3' --AACDR3 'AA. Seq. CDR3' --path '../data_examples/' --f1 'Q1_0_F1_.txt' --f2 'Q1_15_F1_.txt' --nullpara1 'parameters_1.npy' --nullpara2 'parameters_1.npy' --pval 0.05 --smedthresh 0  `
 
 
 ## First function : Noise Model
