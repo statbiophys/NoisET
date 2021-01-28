@@ -35,13 +35,13 @@ pip install noisets
 ## Command Lines:
 
 To Infer Null Model noise: NoisET first function (1)
-At the command prompt, type ` (env) machine: user$ noiset-noise --NB --freq 'Clone fraction' --counts 'Clone count' --ntCDR3 'N. Seq CDR3' --AACDR3 'AA. Seq. CDR3' --path 'data_example/' --f1 'S1_0_F1_.txt' --f2 'S1_0_F2_.txt' `
+At the command prompt, type ` (env) machine: user$ noiset-noise --NB --freq 'Clone fraction' --counts 'Clone count' --ntCDR3 'N. Seq CDR3' --AACDR3 'AA. Seq. CDR3' --path 'data_examples/' --f1 'Q1_0_F1_.txt' --f2 'Q1_0_F2_.txt' `
 
 To generate biological replicates - to check consistency with experiments 
-At the command prompt, type ` (env) machine: user$ noiset-nullgenerator --NB --NreadsI 25000 --NreadsII 25000 --Nclones 20000 --filename 'test' --nullpara 'data_example/parameters_1.npy'  `
+At the command prompt, type ` (env) machine: user$ noiset-nullgenerator --NB --NreadsI 25000 --NreadsII 25000 --Nclones 20000 --filename 'test' --nullpara 'data_examples/parameters_1.npy'  `
 
 To detect responding clones to a stimulus: NoisET second function (2)
-At the command prompt, type ` (env) machine: user$ noiset-detection --NB --freq 'Clone fraction' --counts 'Clone count' --ntCDR3 'N. Seq CDR3' --AACDR3 'AA. Seq. CDR3' --path 'data_example/' --f1 'S1_0_F1_.txt' --f2 'S1_15_F1_.txt' --nullpara1 'parameters_1.npy' --nullpara2 'parameters_2.npy' --pval 0.05 --smedthresh 0  `
+At the command prompt, type ` (env) machine: user$ noiset-detection --NB --freq 'Clone fraction' --counts 'Clone count' --ntCDR3 'N. Seq CDR3' --AACDR3 'AA. Seq. CDR3' --path 'data_examples/' --f1 'Q1_0_F1_.txt' --f2 'Q1_15_F1_.txt' --nullpara1 'parameters_1.npy' --nullpara2 'parameters_1.npy' --pval 0.05 --smedthresh 0  `
 
 
 ## First function : Noise Model
