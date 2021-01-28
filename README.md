@@ -34,7 +34,7 @@ pip install noisets
 
 ## Command Lines:
 
-<img src="docs/commandline-noise.png" width="150" />
+<img src="docs/commandline-noise.png" width="150" length="200" />
 
 ## First function : Noise Model
 
