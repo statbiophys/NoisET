@@ -164,3 +164,6 @@ You can download Jupyter notebook and modify it with your own PATHTODATA / dataf
 # Contact
 
 Any issues or questions should be addressed to [us](mailto:meriem.bensoudakoraichi@gmail.com).
+
+# LICENSE
+Free use of NoisET is granted under the terms of the GNU General Public License version 3 (GPLv3).
