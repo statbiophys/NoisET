@@ -1,3 +1,5 @@
+<img src="NoisET.png" width="150" />
+
 # NoisET  NOIse sampling learning & Expansion detection of T-cell receptors using Bayesian inference.
 (NoisET should be pronounced like "noisettes" (ie nuts in French)).
 High-throughput sequencing of T- and B-cell receptors makes it possible to track immune
