@@ -44,9 +44,9 @@ Several options are needed to learn noise model from two replicates samples asso
 
 `--path 'PATHTODATA'`: set path to data file \
 `--f1 'FILENAME1_X_REP1'`: filename for individual X replicate 1 \
-`--f2 'FILENAME2_X_REP2'`: filename for individual X replicate 2 \
+`--f2 'FILENAME2_X_REP2'`: filename for individual X replicate 2 
 
-If your TCRs CDR3 clonal populations features (ie clonal fractions, clonal counts, clonal nucleotides CDR3 sequences and clonal amino acids sequences) have different column names than (respectively): ('Clone fraction', 'Clone count', 'N. Seq. CDR3', 'AA. Seq. CDR3), you can specify it by using: \
+If your TCRs CDR3 clonal populations features (ie clonal fractions, clonal counts, clonal nucleotides CDR3 sequences and clonal amino acids sequences) have different column names than (respectively): ('Clone fraction', 'Clone count', 'N. Seq. CDR3', 'AA. Seq. CDR3), you can specify it by using: 
 
 `--specify` \
 `--freq 'frequency'` : Column label associated to the clonal fraction \
@@ -60,9 +60,10 @@ If your TCRs CDR3 clonal populations features (ie clonal fractions, clonal count
 `--NB`: Negative Binomial - 4 parameters  \
 `--Poisson`: Poisson - 2 parameters 
 
-
+#### 3/ Example:
 At the command prompt, type:
-` (env) machine: user$ noiset-noise --NB --freq 'Clone fraction' --counts 'Clone count' --ntCDR3 'N. Seq CDR3' --AACDR3 'AA. Seq. CDR3' --path '../data_examples/' --f1 'Q1_0_F1_.txt' --f2 'Q1_0_F2_.txt' `
+```console
+(env) machine: user$ noiset-noise --NB --freq 'Clone fraction' --counts 'Clone count' --ntCDR3 'N. Seq CDR3' --AACDR3 'AA. Seq. CDR3' --path '../data_examples/' --f1 'Q1_0_F1_.txt' --f2 'Q1_0_F2_.txt' ```
 
 To generate biological replicates - to check consistency with experiments 
 At the command prompt, type ` (env) machine: user$ noiset-nullgenerator --NB --NreadsI 25000 --NreadsII 25000 --Nclones 20000 --filename 'test' --nullpara '../data_examples/parameters_1.npy'  `
