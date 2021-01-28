@@ -41,9 +41,9 @@ To Infer Null Model noise: NoisET first function (1), use the command `noiset-no
 Several options are needed to learn noise model from two replicates samples associated to one individual at a specific time point:
 
 #### 1/ Choice of noise model:
-`--NBPoisson`: Negative Binomial + Poisson Noise Model - 5 parameters
-`--NB`: Negative Binomial - 4 parameters 
-`--Poisson`: Poisson - 2 parameters 
+`--NBPoisson`: Negative Binomial + Poisson Noise Model - 5 parameters \
+`--NB`: Negative Binomial - 4 parameters  \
+`--Poisson`: Poisson - 2 parameters \ 
 
 At the command prompt, type:
 ` (env) machine: user$ noiset-noise --NB --freq 'Clone fraction' --counts 'Clone count' --ntCDR3 'N. Seq CDR3' --AACDR3 'AA. Seq. CDR3' --path '../data_examples/' --f1 'Q1_0_F1_.txt' --f2 'Q1_0_F2_.txt' `
