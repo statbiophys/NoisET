@@ -78,6 +78,8 @@ You can download Jupyter notebook and modify it with your own PATHTODATA / dataf
 
 To check qualitatively consistency of NoisET first function (1) with experiments or for other reasons, it can be useful to generates synthetic replicates from null model (described in Methods section).
 
+### A/ Command Line
+
 #### 1/ Choice of noise model:
 As before `--NBP`, `--NB`, or `--Poisson`.
 
@@ -91,48 +93,60 @@ for `--Poisson`.
 `--Nreads2 NNNN`: total number  of reads in second replicate - it should match the actual data. \
 `--Nclones NNNN`: total number of clones in union of two replicates - it should match the actual data.
 
-### 4/ output pile
+### 4/ Output file
 `--filename 'SYNTHETICDATA'`: name of the output file where you can find the synthetic data set. 
 
 At the command prompt, type 
  ```console
  $ noiset-nullgenerator --NB --nullpara '../data_examples/parameters_1.npy' --NreadsI 25000 --NreadsII 25000 --Nclones 20000 --filename 'test'  
  ```
- 
- 
+ ### B/ Python Package 
 
+For Python users, it is possible to use NoisET as a package importing it as mentioned before. A jupyter notebook explaining the use of all the functions of interest is provided: NoisET example - Null model learning.ipynb
+```python 
+import noisets
+from noisets import noisettes as ns
+```
+You can download Jupyter notebook and modify it with your own PATHTODATA / datafile specificities - vizualization tools are also provided.
+
+
+ ## 3/ Detect Responding clones:
+ 
 To detect responding clones to a stimulus: NoisET second function (2)
+
+### A/ Command Line
+
+#### 1/ Choice of noise model:
+As before `--NBP`, `--NB`, or `--Poisson`.
+
+#### 2/ Specify learnt parameters for both time points:
+(they can be the same for both time points if replicates are not available but to use carefully as mentioned in [ARTICLE])
+`--nullpara1 'PATH/FOLDER/NULLPARAS1.npy'`: parameters learnt thanks to NoisET function (1) for time 1 \
+`--nullpara2 'PATH/FOLDER/NULLPARAS2.npy'`: parameters learnt thanks to NoisET function (1) for time 2 
+
+!!! Watch out to match correctly the noise model and the null parameters file content : 5 parameters for `--NBP`, 4 parameters for `--NB`and 2 parameters
+for `--Poisson`. 
+
+#### 3/ Data information:
+
+`--path 'PATHTODATA'`: set path to data file \
+`--f1 'FILENAME1_X_time1'`: filename for individual X time 1 \
+`--f2 'FILENAME2_X_time2'`: filename for individual X time 2 \
+
+If your TCRs CDR3 clonal populations features (ie clonal fractions, clonal counts, clonal nucleotides CDR3 sequences and clonal amino acids sequences) have different column names than (respectively): ('Clone fraction', 'Clone count', 'N. Seq. CDR3', 'AA. Seq. CDR3), you can specify it by using: 
+
+`--specify` \
+`--freq 'frequency'` : Column label associated to clonal fraction \
+`--counts 'counts'`:  Column label associated to clonal count  \
+`--ntCDR3 'ntCDR3'`:  Column label associated to clonal CDR3 nucleotides sequence  \
+`--AACDR3 'AACDR3'`:  Column label associated to clonal CDR3 amino acid sequence
+
+#### 4/ Detection thresholds: (More details in Methods section).
+`--pval XXX` : p-value threshold for the expansion/contraction - use 0.05 as default value. \
+`--smedthresh XXX` : log fold change mediane threshold for the expansion/contraction - use 0 as default value. \
+
+
 At the command prompt, type 
-```$ noiset-detection --NB --freq 'Clone fraction' --counts 'Clone count' --ntCDR3 'N. Seq CDR3' --AACDR3 'AA. Seq. CDR3' --path '../data_examples/' --f1 'Q1_0_F1_.txt' --f2 'Q1_15_F1_.txt' --nullpara1 'parameters_1.npy' --nullpara2 'parameters_1.npy' --pval 0.05 --smedthresh 0  `
+```$ noiset-detection --NB  --nullpara1 '../data_examples/parameters_1.npy' --nullpara2 '../data_examples/parameters_1.npy' --path '../data_examples/' --f1 'Q1_0_F1_.txt' --f2 'Q1_15_F1_.txt' --pval 0.05 --smedthresh 0  `
 
-
-## First function : Noise Model
-
-</br>
-
-### Infer the model
-First function of NoisET is to infer statistical null model of sequence counts and variability, using RepSeq experiments.
-In the main code file noisettes.py, this function is associated to the class Experimental_Noise_Model. In the notebook [Null Model Learning],
-replicates of patient $S_1$ from [Pogorelyy PNASref] are used to extract sampling noise dispersion. An other example using replicates from another technology () is also displayed in the notebook.
-
-!! default input : initial parameters, maxcount mincount
-
-To learn the null model, the user should choose one of  the fourth noise model : noise_model 
-noise_model:
-- 0 : NB + Poisson / 5 parameters
-- 1 : NB / 4 parameters
-- 2 : Poisson / 2 parameters
-
-### Check the model
-
-
-
-## Second function: Differential Expression: 
-
-To detect responding clonotypes, the user provides, in addtion to the two datasets to be compared, two sets of experimental noise parameters learnt at both times
-using the first function. 
-
-
-
-
-
+# Methods
