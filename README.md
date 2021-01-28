@@ -120,9 +120,9 @@ To detect responding clones to a stimulus: NoisET second function (2)
 As before `--NBP`, `--NB`, or `--Poisson`.
 
 #### 2/ Specify learnt parameters for both time points:
-(they can be the same for both time points if replicates are not available but to use carefully as mentioned in [ARTICLE])
+(they can be the same for both time points if replicates are not available but to use carefully as mentioned in [ARTICLE]) \
 `--nullpara1 'PATH/FOLDER/NULLPARAS1.npy'`: parameters learnt thanks to NoisET function (1) for time 1 \
-`--nullpara2 'PATH/FOLDER/NULLPARAS2.npy'`: parameters learnt thanks to NoisET function (1) for time 2 
+`--nullpara2 'PATH/FOLDER/NULLPARAS2.npy'`: parameters learnt thanks to NoisET function (1) for time 2  \
 
 !!! Watch out to match correctly the noise model and the null parameters file content : 5 parameters for `--NBP`, 4 parameters for `--NB`and 2 parameters
 for `--Poisson`. 
@@ -143,10 +143,13 @@ If your TCRs CDR3 clonal populations features (ie clonal fractions, clonal count
 
 #### 4/ Detection thresholds: (More details in Methods section).
 `--pval XXX` : p-value threshold for the expansion/contraction - use 0.05 as default value. \
-`--smedthresh XXX` : log fold change mediane threshold for the expansion/contraction - use 0 as default value. \
+`--smedthresh XXX` : log fold change mediane threshold for the expansion/contraction - use 0 as default value. 
 
 
 At the command prompt, type 
-```$ noiset-detection --NB  --nullpara1 '../data_examples/parameters_1.npy' --nullpara2 '../data_examples/parameters_1.npy' --path '../data_examples/' --f1 'Q1_0_F1_.txt' --f2 'Q1_15_F1_.txt' --pval 0.05 --smedthresh 0  `
+```console
+$ noiset-detection --NB  --nullpara1 '../data_examples/parameters_1.npy' --nullpara2 '../data_examples/parameters_1.npy' --path '../data_examples/' --f1 'Q1_0_F1_.txt' --f2 'Q1_15_F1_.txt' --pval 0.05 --smedthresh 0 
+```
+At the command prompt, type 
 
 # Methods
