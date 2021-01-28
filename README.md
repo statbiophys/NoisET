@@ -78,8 +78,25 @@ You can download Jupyter notebook and modify it with your own PATHTODATA / dataf
 
 To check qualitatively consistency of NoisET first function (1) with experiments or for other reasons, it can be useful to generates synthetic replicates from null model (described in Methods section).
 
- At the command prompt, type 
- ```$ noiset-nullgenerator --NB --NreadsI 25000 --NreadsII 25000 --Nclones 20000 --filename 'test' --nullpara '../data_examples/parameters_1.npy'  
+#### 1/ Choice of noise model:
+As before `--NBP`, `--NB`, or `--Poisson`.
+
+#### 2/ Specify learnt parameters:
+`--nullpara 'PATH/FOLDER/NULLPARAS.npy'`: parameters learnt thanks to NoisET function (1) \
+!!! Watch out to match correctly the noise model and the null parameters file content : 5 parameters for `--NBP`, 4 parameters for `--NB`and 2 parameters
+for `--Poisson`. \
+
+#### 3/ Sequencing properties of data:
+`--NreadsI NNNN`: total number  of reads in first replicate - it should match the actual data.
+`--Nreads2 NNNN`: total number  of reads in second replicate - it should match the actual data.
+`--Nclones NNNN`: total number of clones in union of two replicates.
+
+### 4/ output pile
+`--filename 'SYNTHETICDATA'`: name of the output file where you can find the synthetic data set. 
+
+At the command prompt, type 
+ ```console
+ $ noiset-nullgenerator --NB --nullpara '../data_examples/parameters_1.npy' --NreadsI 25000 --NreadsII 25000 --Nclones 20000 --filename 'test'  
  ```
  
  
