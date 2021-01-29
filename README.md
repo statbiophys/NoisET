@@ -64,7 +64,7 @@ If your TCR CDR3 clonal populations features (ie clonal fractions, clonal counts
 #### 3/ Example:
 At the command prompt, type:
 ```console
-$ noiset-noise --path '../data_examples/' --f1 'Q1_0_F1_.txt' --f2 'Q1_0_F2_.txt' --NB
+$ noiset-noise --path 'data_examples/' --f1 'Q1_0_F1_.txt' --f2 'Q1_0_F2_.txt' --NB
 ```
 This command line will learn four parameters associated to the Negative Binomial Noise Model `--NB` for individual Q1 at day 0.
 A .npy file is created in the working directory: it is a 5/4/2 parameter vector depending of the choise of the NBP/NB/Poisson noise model.
@@ -105,7 +105,7 @@ for `--Poisson`.
 
 At the command prompt, type 
  ```console
- $ noiset-nullgenerator --NB --nullpara '../data_examples/parameters_1.npy' --NreadsI 25000 --NreadsII 25000 --Nclones 20000 --filename 'test'  
+ $ noiset-nullgenerator --NB --nullpara 'data_examples/parameters_1.npy' --NreadsI 25000 --NreadsII 25000 --Nclones 20000 --filename 'test'  
  ```
  ### B/ Python package 
 
@@ -157,7 +157,7 @@ If your TCR CDR3 clonal populations features (ie clonal fractions, clonal counts
 
 At the command prompt, type 
 ```console
-$ noiset-detection --NB  --nullpara1 '../data_examples/parameters_1.npy' --nullpara2 '../data_examples/parameters_1.npy' --path '../data_examples/' --f1 'Q1_0_F1_.txt' --f2 'Q1_15_F1_.txt' --pval 0.05 --smedthresh 0 
+$ noiset-detection --NB  --nullpara1 'data_examples/parameters_1.npy' --nullpara2 '../data_examples/parameters_1.npy' --path '../data_examples/' --f1 'Q1_0_F1_.txt' --f2 'Q1_15_F1_.txt' --pval 0.05 --smedthresh 0 
 ```
  ### B/ Python package 
 
