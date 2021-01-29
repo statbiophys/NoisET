@@ -1,5 +1,5 @@
 
-<img src="NoisET.png": center;  width="300" />
+<img src="NoisET.png"  width="300" />
 
 # NoisET  NOIse sampling learning & Expansion detection of T-cell receptors using Bayesian inference.
 (NoisET should be pronounced like "noisettes" (ie hazelnuts in French)).
