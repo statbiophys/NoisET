@@ -170,8 +170,8 @@ from noisets import noisettes as ns
 ```
 You can download a Jupyter notebook and modify it with your own PATHTODATA / datafile specificities - visualization tools are also provided.
 
-# Methods.
-The user must chose one of the three possible models for the probability that a TCR has the empirical count $\hat{n} $ knowing that its true frequency is $f$ $P(\hat{n}|f)$: a Poisson distribution `--Poisson`, a negative binomial distribution `--NB`, or a two-step model combining Negative-Binomial and Poisson distribution `--NBP`. $\hat{n}$ is the empirical clone size and does depend on the experimental protocol.
+# Methods
+The user must chose one of the three possible models for the probability that a TCR has the empirical count $$\hat{n} $$ knowing that its true frequency is $f$ $P(\hat{n}|f)$: a Poisson distribution `--Poisson`, a negative binomial distribution `--NB`, or a two-step model combining Negative-Binomial and Poisson distribution `--NBP`. $\hat{n}$ is the empirical clone size and does depend on the experimental protocol.
 For each $P(\hat{n}|f)$, a set of parameters are learnt 
 
 
@@ -179,5 +179,5 @@ For each $P(\hat{n}|f)$, a set of parameters are learnt
 
 Any issues or questions should be addressed to [us](mailto:meriem.bensoudakoraichi@gmail.com).
 
-# LICENSE
+# License
 Free use of NoisET is granted under the terms of the GNU General Public License version 3 (GPLv3).
