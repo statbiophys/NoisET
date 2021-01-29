@@ -34,9 +34,9 @@ $ pip install noisets
 
 # Documentation
 
-## 1/ Infer Noise Model 
+## 1/ Infer noise model 
 
-### A/ Command Line
+### A/ Command line
 
 To Infer Null Model noise: NoisET first function (1), use the command `noiset-noise`
 Several options are needed to learn noise model from two replicates samples associated to one individual at a specific time point:
@@ -70,7 +70,7 @@ This command line will learn four parameters associated to Negative Binomial Noi
 A .npy file is created in the working directory: it is a 5/4/2 parameters vector depending of the choise of NBP/NB/Poisson noise model.
 You can run previous example using data provided in data_examples folder - data from [Precise tracking of vaccine-responding T cell clones reveals convergent and personalized response in identical twins, Pogorelyy et al, PNAS](https://www.pnas.org/content/115/50/12704) 
 
-### B/ Python Package 
+### B/ Python package 
 
 For Python users, it is possible to use NoisET as a package importing it as mentioned before. A jupyter notebook explaining the use of all the functions of interest is provided: NoisET example - Null model learning.ipynb
 ```python 
@@ -83,7 +83,7 @@ You can download Jupyter notebook and modify it with your own PATHTODATA / dataf
 
 To check qualitatively consistency of NoisET first function (1) with experiments or for other reasons, it can be useful to generates synthetic replicates from null model (described in Methods section).
 
-### A/ Command Line
+### A/ Command line
 
 #### 1/ Choice of noise model:
 As before `--NBP`, `--NB`, or `--Poisson`.
@@ -105,7 +105,7 @@ At the command prompt, type
  ```console
  $ noiset-nullgenerator --NB --nullpara '../data_examples/parameters_1.npy' --NreadsI 25000 --NreadsII 25000 --Nclones 20000 --filename 'test'  
  ```
- ### B/ Python Package 
+ ### B/ Python package 
 
 For Python users, it is possible to use NoisET as a package importing it as mentioned before. A jupyter notebook explaining the use of all the functions of interest is provided: NoisET example - Null model learning.ipynb
 ```python 
@@ -115,11 +115,11 @@ from noisets import noisettes as ns
 You can download Jupyter notebook and modify it with your own PATHTODATA / datafile specificities - visualization tools are also provided.
 
 
- ## 3/ Detect Responding clones:
+ ## 3/ Detect responding clones:
  
 To detect responding clones to a stimulus: NoisET second function (2)
 
-### A/ Command Line
+### A/ Command line
 
 #### 1/ Choice of noise model:
 As before `--NBP`, `--NB`, or `--Poisson`.
@@ -155,7 +155,7 @@ At the command prompt, type
 ```console
 $ noiset-detection --NB  --nullpara1 '../data_examples/parameters_1.npy' --nullpara2 '../data_examples/parameters_1.npy' --path '../data_examples/' --f1 'Q1_0_F1_.txt' --f2 'Q1_15_F1_.txt' --pval 0.05 --smedthresh 0 
 ```
- ### B/ Python Package 
+ ### B/ Python package 
 
 For Python users, it is possible to use NoisET as a package importing it as mentioned before. A jupyter notebook explaining the use of all the functions of interest is provided: NoisET example - detection responding clones.ipynb
 ```python 
