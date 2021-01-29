@@ -2,7 +2,7 @@
 <img src="NoisET.png"  width="300" />
 
 # NoisET  NOIse sampling learning & Expansion detection of T-cell receptors using Bayesian inference.
-(NoisET should be pronounced like "noisettes" (ie hazelnuts in French)).
+(NoisET pronounced like "noisettes" (ie hazelnuts in French)).
 High-throughput sequencing of T- and B-cell receptors makes it possible to track immune
 repertoires across time, in different tissues, in acute and chronic diseases or in healthy individuals. However
 quantitative comparison between repertoires is confounded by variability in the read count of each receptor
@@ -21,7 +21,7 @@ NoisET package is desribed in  <https://arxiv.org/pdf/1912.08304.pdf> #change th
 Python 3 
 
 To install NoisET, gitclone the file in your working environment. 
-Using terminal, go inside NoisET directory and write the following command : 
+Using the terminal, go to tbe NoisET directory and write the following command : 
 
 ```console
 $ sudo python setup.py install
@@ -34,12 +34,12 @@ $ pip install noisets
 
 # Documentation
 
-## 1/ Infer noise model 
+## 1/ Infer the noise model 
 
 ### A/ Command line
 
-To Infer Null Model noise: NoisET first function (1), use the command `noiset-noise`
-Several options are needed to learn noise model from two replicates samples associated to one individual at a specific time point:
+To Infer the Null Model noise: NoisET first function (1), use the command `noiset-noise`
+Several options are needed to learn noise model from two replicate samples associated to one individual at a specific time point:
 
 #### 1/ Data information:
 
@@ -47,7 +47,7 @@ Several options are needed to learn noise model from two replicates samples asso
 `--f1 'FILENAME1_X_REP1'`: filename for individual X replicate 1 \
 `--f2 'FILENAME2_X_REP2'`: filename for individual X replicate 2 
 
-If your TCRs CDR3 clonal populations features (ie clonal fractions, clonal counts, clonal nucleotides CDR3 sequences and clonal amino acids sequences) have different column names than (respectively): ('Clone fraction', 'Clone count', 'N. Seq. CDR3', 'AA. Seq. CDR3), you can specify it by using: 
+If your TCR CDR3 clonal populations features (ie clonal fractions, clonal counts, clonal nucleotide CDR3 sequences and clonal amino acid sequences) have different column names than: ('Clone fraction', 'Clone count', 'N. Seq. CDR3', 'AA. Seq. CDR3), you can specify the name directly by using: 
 
 `--specify` \
 `--freq 'frequency'` : Column label associated to clonal fraction \
@@ -56,7 +56,7 @@ If your TCRs CDR3 clonal populations features (ie clonal fractions, clonal count
 `--AACDR3 'AACDR3'`:  Column label associated to clonal CDR3 amino acid sequence
 
 
-#### 2/ Choice of noise model: (described in Methods section)
+#### 2/ Choice of the noise model: (described in Methods section)
 `--NBPoisson`: Negative Binomial + Poisson Noise Model - 5 parameters \
 `--NB`: Negative Binomial - 4 parameters  \
 `--Poisson`: Poisson - 2 parameters 
@@ -66,9 +66,9 @@ At the command prompt, type:
 ```console
 $ noiset-noise --path '../data_examples/' --f1 'Q1_0_F1_.txt' --f2 'Q1_0_F2_.txt' --NB
 ```
-This command line will learn four parameters associated to Negative Binomial Noise Model `--NB` for individual Q1 of the associated study at day 0.
-A .npy file is created in the working directory: it is a 5/4/2 parameters vector depending of the choise of NBP/NB/Poisson noise model.
-You can run previous example using data provided in data_examples folder - data from [Precise tracking of vaccine-responding T cell clones reveals convergent and personalized response in identical twins, Pogorelyy et al, PNAS](https://www.pnas.org/content/115/50/12704) 
+This command line will learn four parameters associated to the Negative Binomial Noise Model `--NB` for individual Q1 at day 0.
+A .npy file is created in the working directory: it is a 5/4/2 parameter vector depending of the choise of the NBP/NB/Poisson noise model.
+You can run previous examples using data provided in the data_examples folder - data from [Precise tracking of vaccine-responding T cell clones reveals convergent and personalized response in identical twins, Pogorelyy et al, PNAS](https://www.pnas.org/content/115/50/12704) 
 
 ### B/ Python package 
 
@@ -77,20 +77,22 @@ For Python users, it is possible to use NoisET as a package importing it as ment
 import noisets
 from noisets import noisettes as ns
 ```
-You can download Jupyter notebook and modify it with your own PATHTODATA / datafile specificities.
+You can download the Jupyter notebook and modify it with your own PATHTODATA / datafile specificities.
 
 ## 2/ Generate synthetic data for null model learning:
 
-To check qualitatively consistency of NoisET first function (1) with experiments or for other reasons, it can be useful to generates synthetic replicates from null model (described in Methods section).
+To qualitatively check consistency of the NoisET first function (1) with experiments or for other reasons, it can be useful to generates synthetic replicates from the null model (described in Methods section).
 
 ### A/ Command line
 
 #### 1/ Choice of noise model:
-As before `--NBP`, `--NB`, or `--Poisson`.
+`--NBPoisson`: Negative Binomial + Poisson Noise Model - 5 parameters \
+`--NB`: Negative Binomial - 4 parameters  \
+`--Poisson`: Poisson - 2 parameters 
 
 #### 2/ Specify learnt parameters:
 `--nullpara 'PATH/FOLDER/NULLPARAS.npy'`: parameters learnt thanks to NoisET function (1) \
-!!! Watch out to match correctly the noise model and the null parameters file content : 5 parameters for `--NBP`, 4 parameters for `--NB`and 2 parameters
+!!! Make sure to match correctly the noise model and the null parameter file content : 5 parameters for `--NBP`, 4 parameters for `--NB`and 2 parameters
 for `--Poisson`. 
 
 #### 3/ Sequencing properties of data:
@@ -112,24 +114,26 @@ For Python users, it is possible to use NoisET as a package importing it as ment
 import noisets
 from noisets import noisettes as ns
 ```
-You can download Jupyter notebook and modify it with your own PATHTODATA / datafile specificities - visualization tools are also provided.
+You can download the Jupyter notebook and modify it with your own PATHTODATA / datafile specificities - visualization tools are also provided.
 
 
  ## 3/ Detect responding clones:
  
-To detect responding clones to a stimulus: NoisET second function (2)
+Detects responding clones to a stimulus: NoisET second function (2)
 
 ### A/ Command line
 
 #### 1/ Choice of noise model:
-As before `--NBP`, `--NB`, or `--Poisson`.
+`--NBPoisson`: Negative Binomial + Poisson Noise Model - 5 parameters \
+`--NB`: Negative Binomial - 4 parameters  \
+`--Poisson`: Poisson - 2 parameters 
 
 #### 2/ Specify learnt parameters for both time points:
 (they can be the same for both time points if replicates are not available but to use carefully as mentioned in [ARTICLE]) \
 `--nullpara1 'PATH/FOLDER/NULLPARAS1.npy'`: parameters learnt thanks to NoisET function (1) for time 1 \
 `--nullpara2 'PATH/FOLDER/NULLPARAS2.npy'`: parameters learnt thanks to NoisET function (1) for time 2  
 
-!!! Watch out to match correctly the noise model and the null parameters file content : 5 parameters for `--NBP`, 4 parameters for `--NB`and 2 parameters
+!!! Make sure to match correctly the noise model and the null parameters file content : 5 parameters for `--NBP`, 4 parameters for `--NB`and 2 parameters
 for `--Poisson`. 
 
 #### 3/ Data information:
@@ -138,7 +142,7 @@ for `--Poisson`.
 `--f1 'FILENAME1_X_time1'`: filename for individual X time 1 \
 `--f2 'FILENAME2_X_time2'`: filename for individual X time 2 
 
-If your TCRs CDR3 clonal populations features (ie clonal fractions, clonal counts, clonal nucleotides CDR3 sequences and clonal amino acids sequences) have different column names than (respectively): ('Clone fraction', 'Clone count', 'N. Seq. CDR3', 'AA. Seq. CDR3), you can specify it by using: 
+If your TCR CDR3 clonal populations features (ie clonal fractions, clonal counts, clonal nucleotides CDR3 sequences and clonal amino acids sequences) have different column names than: ('Clone fraction', 'Clone count', 'N. Seq. CDR3', 'AA. Seq. CDR3), you can specify the name by using: 
 
 `--specify` \
 `--freq 'frequency'` : Column label associated to clonal fraction \
@@ -147,8 +151,8 @@ If your TCRs CDR3 clonal populations features (ie clonal fractions, clonal count
 `--AACDR3 'AACDR3'`:  Column label associated to clonal CDR3 amino acid sequence
 
 #### 4/ Detection thresholds: (More details in Methods section).
-`--pval XXX` : p-value threshold for the expansion/contraction - use 0.05 as default value. \
-`--smedthresh XXX` : log fold change mediane threshold for the expansion/contraction - use 0 as default value. 
+`--pval XXX` : p-value threshold for the expansion/contraction - use 0.05 as a default value. \
+`--smedthresh XXX` : log fold change median threshold for the expansion/contraction - use 0 as a default value. 
 
 
 At the command prompt, type 
@@ -162,7 +166,7 @@ For Python users, it is possible to use NoisET as a package importing it as ment
 import noisets
 from noisets import noisettes as ns
 ```
-You can download Jupyter notebook and modify it with your own PATHTODATA / datafile specificities - visualization tools are also provided.
+You can download a Jupyter notebook and modify it with your own PATHTODATA / datafile specificities - visualization tools are also provided.
 
 # Contact
 
