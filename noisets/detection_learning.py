@@ -88,8 +88,8 @@ def main():
     print("Name of columns of first file are : ", cl_S1.colnames1)
     print("Name of columns of second file are : ", cl_S1.colnames2)
 
-    paras_1 = np.load(path + options.nullparastime1)
-    paras_2 = np.load(path + options.nullparastime2)
+    paras_1 = np.load(options.nullparastime1)
+    paras_2 = np.load(options.nullparastime2)
 
 
     print('paras_1' + str(paras_1))
