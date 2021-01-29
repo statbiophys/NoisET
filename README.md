@@ -171,8 +171,8 @@ from noisets import noisettes as ns
 You can download a Jupyter notebook and modify it with your own PATHTODATA / datafile specificities - visualization tools are also provided.
 
 # Methods.
-The user must chose one of the three possible models for the probability that a TCR has the empirical count $\hat{n} $ knowing that its true frequency is $f$ $P(\hat{n}|f)$: a Poisson distribution `--Poisson`, a negative binomial distribution `--NB`, or a two-step model combining Negative-Binomial and Poisson distribution `--NBP`. $\hat{n}$ is the empirical clone size and does depend on the experimental protocol.
-For each $P(\hat{n}|f)$, a set of parameters are learnt 
+The user must chose one of the three possible models for the probability that a TCR has an empirical count n knowing that its true frequency is f, P(n|f): a Poisson distribution `--Poisson`, a negative binomial distribution `--NB`, or a two-step model combining Negative-Binomial and a Poisson distribution `--NBP`. n is the empirical clone size and  depends on the experimental protocol.
+For each P(n|f), a set of parameters is learnt. 
 
 
 # Contact
