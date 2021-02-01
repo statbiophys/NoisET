@@ -70,7 +70,7 @@ This command line will learn four parameters associated to the Negative Binomial
 A .txt file is created in the working directory: it is a 5/4/2 parameters data-set regarding on NBP/NB/Poisson noise model.
 You can run previous examples using data provided in the data_examples folder - data from [Precise tracking of vaccine-responding T cell clones reveals convergent and personalized response in identical twins, Pogorelyy et al, PNAS](https://www.pnas.org/content/115/50/12704) 
 
-### 4/ Example with `--specify:
+### 4/ Example with `--specify`:
 
 At the command prompt, type:
 ```console
