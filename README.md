@@ -26,11 +26,6 @@ Using the terminal, go to tbe NoisET directory and write the following command :
 ```console
 $ sudo python setup.py install
 ```
-NoisET can be installed using python pip. (not yet allowed!)
-
-```console
-$ pip install noisets
-```
 
 # Documentation
 
