@@ -74,7 +74,7 @@ You can run previous examples using data provided in the data_examples folder - 
 
 At the command prompt, type:
 ```console
-$ noiset-noise --path 'data_examples/' --f1 'replicate_1_1.tsv' --f2 'replicate_1_2.tsv' --specify --freq 'frequencyCount' --counts 'count' --ntCDR3 'nucleotide' --AACDR3 'aminoAcid' --NB
+$ noiset-noise --path 'data_examples/' --f1 'replicate_1_1.tsv.gz' --f2 'replicate_1_2.tsv.gz' --specify --freq 'frequencyCount' --counts 'count' --ntCDR3 'nucleotide' --AACDR3 'aminoAcid' --NB
 ```
 As previously this command enables us to learn four parameters associated to the Negative Binomial Noise Model `--NB` for 1 of cohort generated in [Model to improve specificity for identification of clinically-relevant expanded T cells in peripheral blood, Rytlewski et al, PLOS ONE](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0213684). 
 
