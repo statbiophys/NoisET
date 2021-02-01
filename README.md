@@ -176,8 +176,8 @@ You can download a Jupyter notebook and modify it with your own PATHTODATA / dat
 # Methods
 The user must chose one of the three possible models for the probability that a TCR has an empirical count n knowing that its true frequency is f, P(n|f): a Poisson distribution `--Poisson`, a negative binomial distribution `--NB`, or a two-step model combining Negative-Binomial and a Poisson distribution `--NBP`. n is the empirical clone size and  depends on the experimental protocol.
 For each P(n|f), a set of parameters is learnt. \
-- for `NBP`: 5 parameters described in [Puelma Touzel et al, 2020] (<https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1007873&rev=2>): power-law exponent of clonotypes frequencies distributions, $f_{min}$ of this same clonotype frequencies distribution, \beta and \alpha, parameters of the negative binomial distribution and M, the total number of cells in the sample.
-- for `--NB`: 4 parameters: power-law of the clonotypes frequencies distributions (same ansatz than in [Puelma Touzel et al, 2020] (<https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1007873&rev=2>), $f_{min}$, and $\beta$ and $\alpha$, parameters of the negative binomial distribution. In this 
+- for `NBP`: 5 parameters described in [Puelma Touzel et al, 2020] (<https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1007873&rev=2>): power-law exponent of clonotypes frequencies distributions, f_{min} of this same clonotype frequencies distribution, \beta and \alpha, parameters of the negative binomial distribution and M, the total number of cells in the sample.
+- for `--NB`: 4 parameters: power-law of the clonotypes frequencies distributions (same ansatz than in [Puelma Touzel et al, 2020] (<https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1007873&rev=2>), f_{min}, and $\beta$ and $\alpha$, parameters of the negative binomial distribution. In this 
 - for `--Poisson`: power-law of the clonotypes frequencies distributions (same ansatz than in [Puelma Touzel et al, 2020] (<https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1007873&rev=2>) and $f_{min}$.
 
 
