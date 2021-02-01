@@ -34,8 +34,6 @@ $ pip install noisets
 
 # Documentation
 
-<strong>IMPORTANT: UNZIP files in data_examples before trying command lines. </strong>
-
 ## 1/ Infer the noise model 
 
 ### A/ Command line
@@ -66,7 +64,7 @@ If your TCR CDR3 clonal populations features (ie clonal fractions, clonal counts
 #### 3/ Example:
 At the command prompt, type:
 ```console
-$ noiset-noise --path 'data_examples/' --f1 'Q1_0_F1_.txt' --f2 'Q1_0_F2_.txt' --NB
+$ noiset-noise --path 'data_examples/' --f1 'Q1_0_F1_.txt.gz' --f2 'Q1_0_F2_.txt.gz' --NB
 ```
 This command line will learn four parameters associated to the Negative Binomial Noise Model `--NB` for individual Q1 at day 0.
 A .npy file is created in the working directory: it is a 5/4/2 parameter vector depending of the choise of the NBP/NB/Poisson noise model.
@@ -93,7 +91,7 @@ To qualitatively check consistency of the NoisET first function (1) with experim
 `--Poisson`: Poisson - 2 parameters 
 
 #### 2/ Specify learnt parameters:
-`--nullpara 'PATH/FOLDER/NULLPARAS.npy'`: parameters learnt thanks to NoisET function (1) \
+`--nullpara 'PATH/FOLDER/NULLPARAS.txt'`: parameters learnt thanks to NoisET function (1) \
 !!! Make sure to match correctly the noise model and the null parameter file content : 5 parameters for `--NBP`, 4 parameters for `--NB`and 2 parameters
 for `--Poisson`. 
 
@@ -107,7 +105,7 @@ for `--Poisson`.
 
 At the command prompt, type 
  ```console
- $ noiset-nullgenerator --NB --nullpara 'data_examples/parameters_1.npy' --NreadsI 25000 --NreadsII 25000 --Nclones 20000 --filename 'test'  
+ $ noiset-nullgenerator --NB --nullpara 'data_examples/nullpara1.txt' --NreadsI 25000 --NreadsII 25000 --Nclones 20000 --filename 'test'  
  ```
  ### B/ Python package 
 
