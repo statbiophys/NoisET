@@ -67,8 +67,18 @@ At the command prompt, type:
 $ noiset-noise --path 'data_examples/' --f1 'Q1_0_F1_.txt.gz' --f2 'Q1_0_F2_.txt.gz' --NB
 ```
 This command line will learn four parameters associated to the Negative Binomial Noise Model `--NB` for individual Q1 at day 0.
-A .npy file is created in the working directory: it is a 5/4/2 parameter vector depending of the choise of the NBP/NB/Poisson noise model.
+A .txt file is created in the working directory: it is a 5/4/2 parameters data-set regarding on NBP/NB/Poisson noise model.
 You can run previous examples using data provided in the data_examples folder - data from [Precise tracking of vaccine-responding T cell clones reveals convergent and personalized response in identical twins, Pogorelyy et al, PNAS](https://www.pnas.org/content/115/50/12704) 
+
+### 4/ Example with `--specify':
+
+At the command prompt, type:
+```console
+$ noiset-noise --path 'data_examples/' --f1 'replicate_1_1.tsv' --f2 'replicate_1_2.tsv' --specify --freq 'frequencyCount' --counts 'count' --ntCDR3 'nucleotide' --AACDR3 'aminoAcid' --NB
+```
+As previously this command enables us to learn four parameters associated to the Negative Binomial Noise Model `--NB` for 1 of cohort generated in [Model to improve specificity for identification of clinically-relevant expanded T cells in peripheral blood, Rytlewski et al, PLOS ONE](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0213684). 
+
+
 
 ### B/ Python package 
 
