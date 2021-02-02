@@ -21,7 +21,7 @@ NoisET package is desribed in  <https://arxiv.org/pdf/1912.08304.pdf> #change th
 Python 3 
 
 To install NoisET, gitclone the file in your working environment. 
-Using the terminal, go to tbe NoisET directory and write the following command : 
+Using the terminal, go to NoisET directory and write the following command : 
 
 ```console
 $ sudo python setup.py install
@@ -29,41 +29,41 @@ $ sudo python setup.py install
 
 # Documentation
 
-## 1/ Infer the noise model 
+## 1/ Infer noise model 
 
 ### A/ Command line
 
-To Infer the Null Model noise: NoisET first function (1), use the command `noiset-noise`
+To Infer Null noise model: NoisET first function (1), use the command `noiset-noise`
 Several options are needed to learn noise model from two replicate samples associated to one individual at a specific time point:
 
 #### 1/ Data information:
 
-`--path 'PATHTODATA'`: set path to data file \
-`--f1 'FILENAME1_X_REP1'`: filename for individual X replicate 1 \
-`--f2 'FILENAME2_X_REP2'`: filename for individual X replicate 2 
+- `--path 'PATHTODATA'`: set path to data file \
+- `--f1 'FILENAME1_X_REP1'`: filename for individual X replicate 1 \
+- `--f2 'FILENAME2_X_REP2'`: filename for individual X replicate 2 
 
 If your TCR CDR3 clonal populations features (ie clonal fractions, clonal counts, clonal nucleotide CDR3 sequences and clonal amino acid sequences) have different column names than: ('Clone fraction', 'Clone count', 'N. Seq. CDR3', 'AA. Seq. CDR3), you can specify the name directly by using: 
 
-`--specify` \
-`--freq 'frequency'` : Column label associated to clonal fraction \
-`--counts 'counts'`:  Column label associated to clonal count  \
-`--ntCDR3 'ntCDR3'`:  Column label associated to clonal CDR3 nucleotides sequence  \
-`--AACDR3 'AACDR3'`:  Column label associated to clonal CDR3 amino acid sequence
+- `--specify` \
+- `--freq 'frequency'` : Column label associated to clonal fraction \
+- `--counts 'counts'`:  Column label associated to clonal count  \
+- `--ntCDR3 'ntCDR3'`:  Column label associated to clonal CDR3 nucleotides sequence  \
+- `--AACDR3 'AACDR3'`:  Column label associated to clonal CDR3 amino acid sequence
 
 
-#### 2/ Choice of the noise model: (described in Methods section)
-`--NBPoisson`: Negative Binomial + Poisson Noise Model - 5 parameters \
-`--NB`: Negative Binomial - 4 parameters  \
-`--Poisson`: Poisson - 2 parameters 
+#### 2/ Choice of noise model: (parameters meaning described in Methods section)
+- `--NBPoisson`: Negative Binomial + Poisson Noise Model - 5 parameters \
+- `--NB`: Negative Binomial - 4 parameters  \
+- `--Poisson`: Poisson - 2 parameters 
 
 #### 3/ Example:
 At the command prompt, type:
 ```console
 $ noiset-noise --path 'data_examples/' --f1 'Q1_0_F1_.txt.gz' --f2 'Q1_0_F2_.txt.gz' --NB
 ```
-This command line will learn four parameters associated to the Negative Binomial Noise Model `--NB` for individual Q1 at day 0.
-A .txt file is created in the working directory: it is a 5/4/2 parameters data-set regarding on NBP/NB/Poisson noise model.
-You can run previous examples using data provided in the data_examples folder - data from [Precise tracking of vaccine-responding T cell clones reveals convergent and personalized response in identical twins, Pogorelyy et al, PNAS](https://www.pnas.org/content/115/50/12704) 
+This command line will learn four parameters associated to negative binomial null noise Model `--NB` for individual Q1 at day 0.
+A '.txt' file is created in the working directory: it is a 5/4/2 parameters data-set regarding on NBP/NB/Poisson noise model. In this example, it is a four parameters table (already created in data_examples repository). 
+You can run previous examples using data (Q1 day 0/ day15) provided in the data_examples folder - data from [Precise tracking of vaccine-responding T cell clones reveals convergent and personalized response in identical twins, Pogorelyy et al, PNAS](https://www.pnas.org/content/115/50/12704) 
 
 ### 4/ Example with `--specify`:
 
@@ -71,9 +71,7 @@ At the command prompt, type:
 ```console
 $ noiset-noise --path 'data_examples/' --f1 'replicate_1_1.tsv.gz' --f2 'replicate_1_2.tsv.gz' --specify --freq 'frequencyCount' --counts 'count' --ntCDR3 'nucleotide' --AACDR3 'aminoAcid' --NB
 ```
-As previously this command enables us to learn four parameters associated to the Negative Binomial Noise Model `--NB` for 1 of cohort generated in [Model to improve specificity for identification of clinically-relevant expanded T cells in peripheral blood, Rytlewski et al, PLOS ONE](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0213684). 
-
-
+As previously this command enables us to learn four parameters associated to negative binomial null noise model `--NB` for one individual in cohort produced in [Model to improve specificity for identification of clinically-relevant expanded T cells in peripheral blood, Rytlewski et al, PLOS ONE](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0213684). 
 
 ### B/ Python package 
 
