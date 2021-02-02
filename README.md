@@ -1,8 +1,8 @@
 
 <img src="NoisET.png"  width="300" />
 
-# NoisET<sub>*</sub>  NOIse sampling learning & Expansion detection of T-cell receptors using Bayesian inference.
-(NoisET pronounced like "noisettes" (ie hazelnuts in French)).
+# NoisET<sup>*</sup>  NOIse sampling learning & Expansion detection of T-cell receptors using Bayesian inference.
+
 High-throughput sequencing of T- and B-cell receptors makes it possible to track immune
 repertoires across time, in different tissues, in acute and chronic diseases or in healthy individuals. However
 quantitative comparison between repertoires is confounded by variability in the read count of each receptor
@@ -12,8 +12,8 @@ to learn experimental noise models for repertoire sequencing from replicates, an
 clones following a stimulus. The package was tested on different repertoire sequencing technologies and
 datasets.
 
-NoisET package is desribed in  <https://arxiv.org/pdf/1912.08304.pdf> #change the arxiv file to NoisET file
-<sub>* NoisET should be pronounced as "noisettes" (ie hazelnuts in French)).</sub>
+NoisET package is desribed in  .
+<sup>* NoisET should be pronounced as "noisettes" (ie hazelnuts in French)).</sup>
 ----------------------------------------------------------------------------------------------------------------------------
 
 # Installation
