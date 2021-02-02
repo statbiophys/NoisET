@@ -38,22 +38,22 @@ Several options are needed to learn noise model from two replicate samples assoc
 
 #### 1/ Data information:
 
-- `--path 'PATHTODATA'`: set path to data file \
-- `--f1 'FILENAME1_X_REP1'`: filename for individual X replicate 1 \
+- `--path 'PATHTODATA'`: set path to data file 
+- `--f1 'FILENAME1_X_REP1'`: filename for individual X replicate 1 
 - `--f2 'FILENAME2_X_REP2'`: filename for individual X replicate 2 
 
 If your TCR CDR3 clonal populations features (ie clonal fractions, clonal counts, clonal nucleotide CDR3 sequences and clonal amino acid sequences) have different column names than: ('Clone fraction', 'Clone count', 'N. Seq. CDR3', 'AA. Seq. CDR3), you can specify the name directly by using: 
 
-- `--specify` \
-- `--freq 'frequency'` : Column label associated to clonal fraction \
-- `--counts 'counts'`:  Column label associated to clonal count  \
-- `--ntCDR3 'ntCDR3'`:  Column label associated to clonal CDR3 nucleotides sequence  \
+- `--specify` 
+- `--freq 'frequency'` : Column label associated to clonal fraction 
+- `--counts 'counts'`:  Column label associated to clonal count  
+- `--ntCDR3 'ntCDR3'`:  Column label associated to clonal CDR3 nucleotides sequence  
 - `--AACDR3 'AACDR3'`:  Column label associated to clonal CDR3 amino acid sequence
 
 
 #### 2/ Choice of noise model: (parameters meaning described in Methods section)
-- `--NBPoisson`: Negative Binomial + Poisson Noise Model - 5 parameters \
-- `--NB`: Negative Binomial - 4 parameters  \
+- `--NBPoisson`: Negative Binomial + Poisson Noise Model - 5 parameters 
+- `--NB`: Negative Binomial - 4 parameters  
 - `--Poisson`: Poisson - 2 parameters 
 
 #### 3/ Example:
@@ -89,8 +89,8 @@ To qualitatively check consistency of the NoisET first function (1) with experim
 ### A/ Command line
 
 #### 1/ Choice of noise model:
-- `--NBPoisson`: Negative Binomial + Poisson Noise Model - 5 parameters \
-- `--NB`: Negative Binomial - 4 parameters  \
+- `--NBPoisson`: Negative Binomial + Poisson Noise Model - 5 parameters 
+- `--NB`: Negative Binomial - 4 parameters  
 - `--Poisson`: Poisson - 2 parameters 
 
 #### 2/ Specify learnt parameters:
@@ -99,8 +99,8 @@ To qualitatively check consistency of the NoisET first function (1) with experim
 for `--Poisson`. 
 
 #### 3/ Sequencing properties of data:
-- `--NreadsI NNNN`: total number  of reads in first replicate - it should match the actual data. In the example below, it is the sum of 'Clone count' in 'Q1_0_F1_.txt.gz'. \
-- `--Nreads2 NNNN`: total number  of reads in second replicate - it should match the actual data. In the example below, it is the sum of 'Clone count' in 'Q1_0_F2_.txt.gz'. \
+- `--NreadsI NNNN`: total number  of reads in first replicate - it should match the actual data. In the example below, it is the sum of 'Clone count' in 'Q1_0_F1_.txt.gz'. 
+- `--Nreads2 NNNN`: total number  of reads in second replicate - it should match the actual data. In the example below, it is the sum of 'Clone count' in 'Q1_0_F2_.txt.gz'. 
 - `--Nclones NNNN`: total number of clones in union of two replicates - it should match the actual data. In the example below, it is the number of clones present in both replicates : 'Q1_0_F1_.txt.gz' and 'Q1_0_F2_.txt.gz'.
 
 ### 4/ Output file
@@ -127,13 +127,13 @@ Detects responding clones to a stimulus: NoisET second function (2)
 ### A/ Command line
 
 #### 1/ Choice of noise model:
-- `--NBPoisson`: Negative Binomial + Poisson Noise Model - 5 parameters \
-- `--NB`: Negative Binomial - 4 parameters  \
+- `--NBPoisson`: Negative Binomial + Poisson Noise Model - 5 parameters 
+- `--NB`: Negative Binomial - 4 parameters  
 - `--Poisson`: Poisson - 2 parameters 
 
 #### 2/ Specify learnt parameters for both time points:
-(they can be the same for both time points if replicates are not available but to use carefully as mentioned in [ARTICLE]) \
-- `--nullpara1 'PATH/FOLDER/NULLPARAS1.npy'`: parameters learnt thanks to NoisET function (1) for time 1 \
+(they can be the same for both time points if replicates are not available but to use carefully as mentioned in [ARTICLE]) 
+- `--nullpara1 'PATH/FOLDER/NULLPARAS1.npy'`: parameters learnt thanks to NoisET function (1) for time 1 
 - `--nullpara2 'PATH/FOLDER/NULLPARAS2.npy'`: parameters learnt thanks to NoisET function (1) for time 2  
 
 !!! Make sure to match correctly the noise model and the null parameters file content : 5 parameters for `--NBP`, 4 parameters for `--NB`and 2 parameters
@@ -141,20 +141,20 @@ for `--Poisson`.
 
 #### 3/ Data information:
 
-- `--path 'PATHTODATA'`: set path to data file \
-- `--f1 'FILENAME1_X_time1'`: filename for individual X time 1 \
+- `--path 'PATHTODATA'`: set path to data file 
+- `--f1 'FILENAME1_X_time1'`: filename for individual X time 1 
 - `--f2 'FILENAME2_X_time2'`: filename for individual X time 2 
 
 If your TCR CDR3 clonal populations features (ie clonal fractions, clonal counts, clonal nucleotides CDR3 sequences and clonal amino acids sequences) have different column names than: ('Clone fraction', 'Clone count', 'N. Seq. CDR3', 'AA. Seq. CDR3), you can specify the name by using: 
 
-- `--specify` \
-- `--freq 'frequency'` : Column label associated to clonal fraction \
-- `--counts 'counts'`:  Column label associated to clonal count  \
-- `--ntCDR3 'ntCDR3'`:  Column label associated to clonal CDR3 nucleotides sequence  \
+- `--specify` 
+- `--freq 'frequency'` : Column label associated to clonal fraction 
+- `--counts 'counts'`:  Column label associated to clonal count  
+- `--ntCDR3 'ntCDR3'`:  Column label associated to clonal CDR3 nucleotides sequence  
 - `--AACDR3 'AACDR3'`:  Column label associated to clonal CDR3 amino acid sequence
 
 #### 4/ Detection thresholds: (More details in Methods section).
-- `--pval XXX` : p-value threshold for the expansion/contraction - use 0.05 as a default value. \
+- `--pval XXX` : p-value threshold for the expansion/contraction - use 0.05 as a default value. 
 - `--smedthresh XXX` : log fold change median threshold for the expansion/contraction - use 0 as a default value. 
 
 
@@ -173,8 +173,8 @@ You can download a Jupyter notebook and modify it with your own PATHTODATA / dat
 
 # Methods
 The user must chose one of the three possible models for the probability that a TCR has an empirical count n knowing that its true frequency is f, P(n|f): a Poisson distribution `--Poisson`, a negative binomial distribution `--NB`, or a two-step model combining Negative-Binomial and a Poisson distribution `--NBP`. n is the empirical clone size and  depends on the experimental protocol.
-For each P(n|f), a set of parameters is learnt. \
-- for `NBP`: 5 parameters described in [Puelma Touzel et al, 2020] (<https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1007873&rev=2>): power-law exponent of clonotypes frequencies distributions, f\_min\_ of this same clonotype frequencies distribution, \beta and \alpha, parameters of the negative binomial distribution and M, the total number of cells in the sample.
+For each P(n|f), a set of parameters is learnt. 
+- for `NBP`: 5 parameters described in [Puelma Touzel et al, 2020] (<https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1007873&rev=2>): power-law exponent of clonotypes frequencies distributions `'alph_rho'`, minimum of clonotype frequencies distribution `'fmin'`, \beta and \alpha, parameters of the negative binomial distribution and M, the total number of cells in the sample.
 - for `--NB`: 4 parameters: power-law of the clonotypes frequencies distributions (same ansatz than in [Puelma Touzel et al, 2020] (<https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1007873&rev=2>), f_{min}, and $\beta$ and $\alpha$, parameters of the negative binomial distribution. In this 
 - for `--Poisson`: power-law of the clonotypes frequencies distributions (same ansatz than in [Puelma Touzel et al, 2020] (<https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1007873&rev=2>) and $f_{min}$.
 
