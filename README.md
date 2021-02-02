@@ -187,7 +187,7 @@ P(n|f) is Poisson distribution of parameter <em> fNreads </em>. (Nreads is the t
 
 ## Detection learning (2)
 
-[Identifying responding clones] (<https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1007873&rev=2>) paragraph of [Puelma Touzel et al, 2020].
+[Identifying clones](<https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1007873&rev=2>) paragraph of [Puelma Touzel et al, 2020].
 
 
 # Contact
