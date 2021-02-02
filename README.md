@@ -12,7 +12,7 @@ to learn experimental noise models for repertoire sequencing from replicates, an
 clones following a stimulus. The package was tested on different repertoire sequencing technologies and
 datasets. NoisET package is desribed in  . 
 
-<sup>* NoisET should be pronounced as "noisettes" (ie hazelnuts in French)).</sup>
+<sup>* NoisET should be pronounced as "noisettes" (ie hazelnuts in French).</sup>
 
 ----------------------------------------------------------------------------------------------------------------------------
 
@@ -186,7 +186,7 @@ P(n|f) is Poisson distribution of parameter <em> fNreads </em>. (Nreads is the t
 
 ## Detection learning (2)
 
-[Identifyin responding clones] (<https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1007873&rev=2>) paragraph of [Puelma Touzel et al, 2020].
+[Identifying responding clones] (<https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1007873&rev=2>) paragraph of [Puelma Touzel et al, 2020].
 
 
 # Contact
