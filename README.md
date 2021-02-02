@@ -127,35 +127,35 @@ Detects responding clones to a stimulus: NoisET second function (2)
 ### A/ Command line
 
 #### 1/ Choice of noise model:
-`--NBPoisson`: Negative Binomial + Poisson Noise Model - 5 parameters \
-`--NB`: Negative Binomial - 4 parameters  \
-`--Poisson`: Poisson - 2 parameters 
+- `--NBPoisson`: Negative Binomial + Poisson Noise Model - 5 parameters \
+- `--NB`: Negative Binomial - 4 parameters  \
+- `--Poisson`: Poisson - 2 parameters 
 
 #### 2/ Specify learnt parameters for both time points:
 (they can be the same for both time points if replicates are not available but to use carefully as mentioned in [ARTICLE]) \
-`--nullpara1 'PATH/FOLDER/NULLPARAS1.npy'`: parameters learnt thanks to NoisET function (1) for time 1 \
-`--nullpara2 'PATH/FOLDER/NULLPARAS2.npy'`: parameters learnt thanks to NoisET function (1) for time 2  
+- `--nullpara1 'PATH/FOLDER/NULLPARAS1.npy'`: parameters learnt thanks to NoisET function (1) for time 1 \
+- `--nullpara2 'PATH/FOLDER/NULLPARAS2.npy'`: parameters learnt thanks to NoisET function (1) for time 2  
 
 !!! Make sure to match correctly the noise model and the null parameters file content : 5 parameters for `--NBP`, 4 parameters for `--NB`and 2 parameters
 for `--Poisson`. 
 
 #### 3/ Data information:
 
-`--path 'PATHTODATA'`: set path to data file \
-`--f1 'FILENAME1_X_time1'`: filename for individual X time 1 \
-`--f2 'FILENAME2_X_time2'`: filename for individual X time 2 
+- `--path 'PATHTODATA'`: set path to data file \
+- `--f1 'FILENAME1_X_time1'`: filename for individual X time 1 \
+- `--f2 'FILENAME2_X_time2'`: filename for individual X time 2 
 
 If your TCR CDR3 clonal populations features (ie clonal fractions, clonal counts, clonal nucleotides CDR3 sequences and clonal amino acids sequences) have different column names than: ('Clone fraction', 'Clone count', 'N. Seq. CDR3', 'AA. Seq. CDR3), you can specify the name by using: 
 
-`--specify` \
-`--freq 'frequency'` : Column label associated to clonal fraction \
-`--counts 'counts'`:  Column label associated to clonal count  \
-`--ntCDR3 'ntCDR3'`:  Column label associated to clonal CDR3 nucleotides sequence  \
-`--AACDR3 'AACDR3'`:  Column label associated to clonal CDR3 amino acid sequence
+- `--specify` \
+- `--freq 'frequency'` : Column label associated to clonal fraction \
+- `--counts 'counts'`:  Column label associated to clonal count  \
+- `--ntCDR3 'ntCDR3'`:  Column label associated to clonal CDR3 nucleotides sequence  \
+- `--AACDR3 'AACDR3'`:  Column label associated to clonal CDR3 amino acid sequence
 
 #### 4/ Detection thresholds: (More details in Methods section).
-`--pval XXX` : p-value threshold for the expansion/contraction - use 0.05 as a default value. \
-`--smedthresh XXX` : log fold change median threshold for the expansion/contraction - use 0 as a default value. 
+- `--pval XXX` : p-value threshold for the expansion/contraction - use 0.05 as a default value. \
+- `--smedthresh XXX` : log fold change median threshold for the expansion/contraction - use 0 as a default value. 
 
 
 At the command prompt, type 
