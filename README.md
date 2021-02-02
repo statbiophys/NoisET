@@ -89,19 +89,19 @@ To qualitatively check consistency of the NoisET first function (1) with experim
 ### A/ Command line
 
 #### 1/ Choice of noise model:
--`--NBPoisson`: Negative Binomial + Poisson Noise Model - 5 parameters \
--`--NB`: Negative Binomial - 4 parameters  \
--`--Poisson`: Poisson - 2 parameters 
+- `--NBPoisson`: Negative Binomial + Poisson Noise Model - 5 parameters \
+- `--NB`: Negative Binomial - 4 parameters  \
+- `--Poisson`: Poisson - 2 parameters 
 
 #### 2/ Specify learnt parameters:
--`--nullpara 'PATHTOFOLDER/NULLPARAS.txt'`: parameters learnt thanks to NoisET function (1) \
+- `--nullpara 'PATHTOFOLDER/NULLPARAS.txt'`: parameters learnt thanks to NoisET function (1) \
 !!! Make sure to match correctly the noise model and the null parameter file content : 5 parameters for `--NBP`, 4 parameters for `--NB`and 2 parameters
 for `--Poisson`. 
 
 #### 3/ Sequencing properties of data:
--`--NreadsI NNNN`: total number  of reads in first replicate - it should match the actual data. \
--`--Nreads2 NNNN`: total number  of reads in second replicate - it should match the actual data. \
--`--Nclones NNNN`: total number of clones in union of two replicates - it should match the actual data.
+- `--NreadsI NNNN`: total number  of reads in first replicate - it should match the actual data. In the example below, it is the sum of 'Clone count' in 'Q1_0_F1_.txt.gz'. \
+- `--Nreads2 NNNN`: total number  of reads in second replicate - it should match the actual data. In the example below, it is the sum of 'Clone count' in 'Q1_0_F2_.txt.gz'. \
+- `--Nclones NNNN`: total number of clones in union of two replicates - it should match the actual data. In the example below, it is the number of clones present in both replicates : 'Q1_0_F1_.txt.gz' and 'Q1_0_F2_.txt.gz'.
 
 ### 4/ Output file
 `--filename 'SYNTHETICDATA'`: name of the output file where you can find the synthetic data set. 
