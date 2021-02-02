@@ -89,26 +89,26 @@ To qualitatively check consistency of the NoisET first function (1) with experim
 ### A/ Command line
 
 #### 1/ Choice of noise model:
-`--NBPoisson`: Negative Binomial + Poisson Noise Model - 5 parameters \
-`--NB`: Negative Binomial - 4 parameters  \
-`--Poisson`: Poisson - 2 parameters 
+-`--NBPoisson`: Negative Binomial + Poisson Noise Model - 5 parameters \
+-`--NB`: Negative Binomial - 4 parameters  \
+-`--Poisson`: Poisson - 2 parameters 
 
 #### 2/ Specify learnt parameters:
-`--nullpara 'PATH/FOLDER/NULLPARAS.txt'`: parameters learnt thanks to NoisET function (1) \
+-`--nullpara 'PATHTOFOLDER/NULLPARAS.txt'`: parameters learnt thanks to NoisET function (1) \
 !!! Make sure to match correctly the noise model and the null parameter file content : 5 parameters for `--NBP`, 4 parameters for `--NB`and 2 parameters
 for `--Poisson`. 
 
 #### 3/ Sequencing properties of data:
-`--NreadsI NNNN`: total number  of reads in first replicate - it should match the actual data. \
-`--Nreads2 NNNN`: total number  of reads in second replicate - it should match the actual data. \
-`--Nclones NNNN`: total number of clones in union of two replicates - it should match the actual data.
+-`--NreadsI NNNN`: total number  of reads in first replicate - it should match the actual data. \
+-`--Nreads2 NNNN`: total number  of reads in second replicate - it should match the actual data. \
+-`--Nclones NNNN`: total number of clones in union of two replicates - it should match the actual data.
 
 ### 4/ Output file
 `--filename 'SYNTHETICDATA'`: name of the output file where you can find the synthetic data set. 
 
 At the command prompt, type 
  ```console
- $ noiset-nullgenerator --NB --nullpara 'data_examples/nullpara1.txt' --NreadsI 25000 --NreadsII 25000 --Nclones 20000 --filename 'test'  
+ $ noiset-nullgenerator --NB --nullpara 'data_examples/nullpara1.txt' --NreadsI 829578 --NreadsII 954389 --Nclones 776247 --filename 'test'  
  ```
  ### B/ Python package 
 
