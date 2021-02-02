@@ -112,7 +112,7 @@ At the command prompt, type
  ```
  ### B/ Python package 
 
-For Python users, it is possible to use NoisET as a package importing it as mentioned before. A jupyter notebook explaining the use of all the functions of interest is provided: NoisET example - Null model learning.ipynb
+For Python users, it is possible to use NoisET as a package importing it as mentioned before. A jupyter notebook explaining the use of all the functions of interest is provided: <strong> NoisET example - Null model learning.ipynb </strong>
 ```python 
 import noisets
 from noisets import noisettes as ns
@@ -167,7 +167,7 @@ Ouput: table containing all putative detected clones with statistics features ab
 
  ### B/ Python package 
 
-For Python users, it is possible to use NoisET as a package importing it as mentioned before. A jupyter notebook explaining the use of all the functions of interest is provided: NoisET example - detection responding clones.ipynb
+For Python users, it is possible to use NoisET as a package importing it as mentioned before. A jupyter notebook explaining the use of all the functions of interest is provided: <strong> NoisET example - detection responding clones.ipynb </strong>
 ```python 
 import noisets
 from noisets import noisettes as ns
