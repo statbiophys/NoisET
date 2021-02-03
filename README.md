@@ -104,11 +104,11 @@ for `--Poisson`.
 - `--Nclones NNNN`: total number of clones in union of two replicates - it should match the actual data. In the example below, it is the number of clones present in both replicates : 'Q1_0_F1_.txt.gz' and 'Q1_0_F2_.txt.gz'.
 
 ### 4/ Output file
-`--filename 'SYNTHETICDATA'`: name of the output file where you can find the synthetic data set. 
+`--output 'SYNTHETICDATA'`: name of the output file where you can find the synthetic data set. 
 
 At the command prompt, type 
  ```console
- $ noiset-nullgenerator --NB --nullpara 'data_examples/nullpara1.txt' --NreadsI 829578 --NreadsII 954389 --Nclones 776247 --filename 'test'  
+ $ noiset-nullgenerator --NB --nullpara 'data_examples/nullpara1.txt' --NreadsI 829578 --NreadsII 954389 --Nclones 776247 --output 'test'  
  ```
  ### B/ Python package 
 
@@ -157,10 +157,13 @@ If your TCR CDR3 clonal populations features (ie clonal fractions, clonal counts
 - `--pval XXX` : p-value threshold for the expansion/contraction - use 0.05 as a default value. 
 - `--smedthresh XXX` : log fold change median threshold for the expansion/contraction - use 0 as a default value. 
 
+### 5/ Output file
+`--output 'DETECTIONDATA'`: name of the output file (.csv) where you can find a list of the putative responding clones with statistics features. (More details in Methods section).
+
 
 At the command prompt, type 
 ```console
-$ noiset-detection --NB  --nullpara1 'data_examples/nullpara1.txt' --nullpara2 'data_examples/nullpara1.txt' --path 'data_examples/' --f1 'Q1_0_F1_.txt.gz' --f2 'Q1_15_F1_.txt.gz' --pval 0.05 --smedthresh 0 
+$ noiset-detection --NB  --nullpara1 'data_examples/nullpara1.txt' --nullpara2 'data_examples/nullpara1.txt' --path 'data_examples/' --f1 'Q1_0_F1_.txt.gz' --f2 'Q1_15_F1_.txt.gz' --pval 0.05 --smedthresh 0 --output 'detection' 
 ```
 
 Ouput: table containing all putative detected clones with statistics features about logfold-change variable <em> s </em>: more theoretical description [Puelma Touzel et al, 2020](<https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1007873&rev=2>).
