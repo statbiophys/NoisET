@@ -133,8 +133,8 @@ Detects responding clones to a stimulus: NoisET second function (2)
 
 #### 2/ Specify learnt parameters for both time points:
 (they can be the same for both time points if replicates are not available but to use carefully as mentioned in [ARTICLE]) 
-- `--nullpara1 'PATH/FOLDER/NULLPARAS1.npy'`: parameters learnt thanks to NoisET function (1) for time 1 
-- `--nullpara2 'PATH/FOLDER/NULLPARAS2.npy'`: parameters learnt thanks to NoisET function (1) for time 2  
+- `--nullpara1 'PATH/FOLDER/NULLPARAS1.txt'`: parameters learnt thanks to NoisET function (1) for time 1 
+- `--nullpara2 'PATH/FOLDER/NULLPARAS2.txt'`: parameters learnt thanks to NoisET function (1) for time 2  
 
 !!! Make sure to match correctly the noise model and the null parameters file content : 5 parameters for `--NBP`, 4 parameters for `--NB`and 2 parameters
 for `--Poisson`. 
