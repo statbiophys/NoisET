@@ -190,6 +190,8 @@ P(n|f) is Poisson distribution of parameter <em> fNreads </em>. (Nreads is the t
 
 ## Detection learning (2)
 
+The posterior log-fold change distribution computed after optimizing equation [10](<https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1007873&rev=2>) is used to compute the dynamics of each particular clones population (or frequency). Here we give meaning of the different features displayed in ouput file 'detection 
+
 [Identifying clones](<https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1007873&rev=2>) paragraph of [Puelma Touzel et al, 2020].
 
 
