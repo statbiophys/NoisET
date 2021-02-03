@@ -1,10 +1,20 @@
 
-'''
-Functions library for NoisET.
-Can be used as a package 
-Useful for command lines instructions.
-Goal : Learn Noise Model and Detection of responsive clones
-'''
+"""
+Functions library for NoisET - construction of noisettes package
+
+Copyright (C) 2021 Meriem Bensouda Koraichi
+   This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+"""
+
 
 # Import python libraries
 import os
@@ -35,8 +45,8 @@ class Data_Process():
     filename1 : string specifying the name of the first sample associated to indiviual X
     filename2 : string specifying the name of the second sample associated to indiviual X
   
-    colnames1 : list of 
-    colnames2 : """
+    colnames1 : list of columns names of data-set - first sample
+    colnames2 : list of columns names of data-set - second sample """
 
     def __init__(self, path, filename1, filename2, colnames1,  colnames2):
         self.path = path
@@ -52,8 +62,6 @@ class Data_Process():
         Outputs dataframe of pair counts for all clonotypes.
         Uses specified column names and headerline in stored fasta file.
         
-        number_clones:
-        df:
         '''
 
         mincount = 0
@@ -102,7 +110,8 @@ class Data_Process():
 class Noise_Model:
 
 
-    """ Explain this class of methods"""
+    """ Noise_Model:
+    creation of an oject + methods to learn null noise model"""
 
 
     def get_sparserep(self, df): 
@@ -198,7 +207,8 @@ class Noise_Model:
 
     def get_logPn_f(self,unicounts,Nreads,logfvec, noise_model, paras):
 
-        """"""
+        """
+        """
 
 
         # Choice of the model:
