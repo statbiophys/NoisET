@@ -110,6 +110,8 @@ At the command prompt, type
  ```console
  $ noiset-nullgenerator --NB --nullpara 'data_examples/nullpara1.txt' --NreadsI 829578 --NreadsII 954389 --Nclones 776247 --output 'test'  
  ```
+ Running this line, you create a 'synthetic_test.csv' file with four columns : 'Clone_count_1', 'Clone_count_2', 'Clone_fraction_1', 'Clone_fraction_2', resctively synthetic read counts and frequencies that you would have found in an experimental sample of same learnt parameters 'nullpara1.txt', 'NreadsI', 'NreadsII' and 'Nclones'.
+ 
  ### B/ Python package 
 
 For Python users, it is possible to use NoisET as a package importing it as mentioned before. A jupyter notebook explaining the use of all the functions of interest is provided: <strong> NoisET example - Null model learning.ipynb </strong>
