@@ -1,5 +1,5 @@
 
-<img src="NT.png" />
+<img src="NT.png" width=500/>
 
 # NoisET<sup>*</sup>  NOIse sampling learning & Expansion detection of T-cell receptors using Bayesian inference.
 
