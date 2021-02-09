@@ -10,7 +10,7 @@ clonotype due to sampling, library preparation, and expression noise. We present
 package NoisET that implements and generalizes a previously developed Bayesian method in [Puelma Touzel et al, 2020](<https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1007873&rev=2>). It can be used
 to learn experimental noise models for repertoire sequencing from replicates, and to detect responding
 clones following a stimulus. The package was tested on different repertoire sequencing technologies and
-datasets. NoisET package is desribed in  . 
+datasets. NoisET package is desribed [here](<https://arxiv.org/abs/2102.03568>). 
 
 <sup>* NoisET should be pronounced as "noisettes" (ie hazelnuts in French).</sup>
 
