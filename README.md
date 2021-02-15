@@ -65,7 +65,7 @@ This command line will learn four parameters associated to negative binomial nul
 A '.txt' file is created in the working directory: it is a 5/4/2 parameters data-set regarding on NBP/NB/Poisson noise model. In this example, it is a four parameters table (already created in data_examples repository). 
 You can run previous examples using data (Q1 day 0/ day15) provided in the data_examples folder - data from [Precise tracking of vaccine-responding T cell clones reveals convergent and personalized response in identical twins, Pogorelyy et al, PNAS](https://www.pnas.org/content/115/50/12704) 
 
-### 4/ Example with `--specify`:
+#### 4/ Example with `--specify`:
 
 At the command prompt, type:
 ```console
@@ -103,7 +103,7 @@ for `--Poisson`.
 - `--Nreads2 NNNN`: total number  of reads in second replicate - it should match the actual data. In the example below, it is the sum of 'Clone count' in 'Q1_0_F2_.txt.gz'. 
 - `--Nclones NNNN`: total number of clones in union of two replicates - it should match the actual data. In the example below, it is the number of clones present in both replicates : 'Q1_0_F1_.txt.gz' and 'Q1_0_F2_.txt.gz'.
 
-### 4/ Output file
+#### 4/ Output file
 `--output 'SYNTHETICDATA'`: name of the output file where you can find the synthetic data set. 
 
 At the command prompt, type 
