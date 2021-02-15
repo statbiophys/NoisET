@@ -29,6 +29,14 @@ $ sudo python setup.py install
 
 # Documentation
 
+Three commands are available to use :
+- `noiset-noise` To infer Null noise model: NoisET first function (1)
+- `noiset-nullgenerator` To qualitatively check consistency of NoisET first function
+- `noiset-detection` To detect responding clones to a stimulus: NoisET second function (2)
+
+All options are described typing one of the previous commands + `--help`or `-h`. Options are also described in the following READme.
+Notebooks are also available.
+
 ## 1/ Infer noise model 
 
 ### A/ Command line
@@ -84,7 +92,7 @@ You can download the Jupyter notebook and modify it with your own PATHTODATA / d
 
 ## 2/ Generate synthetic data for null model learning:
 
-To qualitatively check consistency of the NoisET first function (1) with experiments or for other reasons, it can be useful to generates synthetic replicates from the null model (described in Methods section).
+To qualitatively check consistency of NoisET first function (1) with experiments or for other reasons, it can be useful to generates synthetic replicates from the null model (described in Methods section).
 
 ### A/ Command line
 
