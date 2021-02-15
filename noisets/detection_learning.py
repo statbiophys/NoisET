@@ -49,6 +49,7 @@ def main():
     parser.add_option('--path', type = str, metavar='PATH/TO/FILE', dest = 'path',  help='set path name to file ')
     parser.add_option('--f1', type = str, metavar='filename1', dest = 'filename1',  help='name of first sample')
     parser.add_option('--f2', type = str, metavar='filename2', dest = 'filename2', help='name of second sample')
+    parser.add_option('--output', type = str, metavar='detection_filename', dest = 'detect_filename',  help='set path name to file ')
 
 
     #Characteristics of data-sets
@@ -67,7 +68,6 @@ def main():
     parser.add_option('--pval', type = float, metavar='pvaluethreshol', dest = 'pval',  help='set pval threshold value for detection of responding clones')
     parser.add_option('--smedthresh', type = float, metavar='smedthreshold', dest = 'smed',  help='set  mediane threshold value  for detection of responding clones ')
 
-    parser.add_option('--output', type = str, metavar='detection_filename', dest = 'detect_filename',  help='set path name to file ')
 
 
     (options, args) = parser.parse_args()
