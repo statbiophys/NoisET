@@ -47,10 +47,10 @@ def main():
     #Characteristics of data-sets
 
     parser.add_option('--specify', action = 'store_true', dest = 'give_details', default= False, help = 'give names of data columns')
-    parser.add_option('--freq', type = str, metavar='frequencies', dest = 'freq_label', help=' clone fractions - data - label ')
+    #parser.add_option('--freq', type = str, metavar='frequencies', dest = 'freq_label', help=' clone fractions - data - label ')
     parser.add_option('--counts', type = str, metavar='counts', dest = 'count_label', help=' clone counts - data - label ')
     parser.add_option('--ntCDR3', type = str, metavar='ntCDR3label', dest = 'ntCDR3_label', help=' CDR3 nucleotides sequences - data - label ')
-    parser.add_option('--AACDR3', type = str, metavar='AACDR3label', dest = 'AACDR3_label', help=' CDR3 Amino acids - data - label ')
+    #parser.add_option('--AACDR3', type = str, metavar='AACDR3label', dest = 'AACDR3_label', help=' CDR3 Amino acids - data - label ')
 
 
     (options, args) = parser.parse_args()
@@ -63,30 +63,30 @@ def main():
     filename2 = options.filename2 # second biological replicate
 
     if options.give_details:
-        colnames1 = [options.freq_label, options.count_label, options.ntCDR3_label, options.AACDR3_label] #colnames that will change if you work with a different data-set
-        colnames2 = [options.freq_label, options.count_label, options.ntCDR3_label, options.AACDR3_label]
+        colnames1 = [options.count_label, options.ntCDR3_label] #colnames that will change if you work with a different data-set
+        colnames2 = [options.count_label, options.ntCDR3_label]
 
     else:
-        colnames1 = ['Clone fraction','Clone count', 'N. Seq. CDR3', 'AA. Seq. CDR3'] #colnames that will change if you work with a different data-set
-        colnames2 = ['Clone fraction','Clone count', 'N. Seq. CDR3', 'AA. Seq. CDR3'] 
+        colnames1 = ['Clone count', 'N. Seq. CDR3'] #colnames that will change if you work with a different data-set
+        colnames2 = ['Clone count', 'N. Seq. CDR3'] 
 
 
     # check 
-    cl_S1 = Data_Process(path, filename1, filename2, colnames1,  colnames2)
+    cl_S1 = Data_Process(path, filename1, filename2, [colnames1[1], colnames2[1]],  [colnames1[0], colnames2[0]])
     print("First Filename is : " , cl_S1.filename1)
     print("Second Filename is : ",  cl_S1.filename2)
-    print("Name of columns of first file are : ", cl_S1.colnames1)
-    print("Name of columns of second file are : ", cl_S1.colnames2)
+    print("Name of count columns are : ", [colnames1[0], colnames2[0]])
+    print("Name of id columns are : ", [colnames1[1], colnames2[1]])
 
     # Create dataframe
 
-    n, df = cl_S1.import_data()
+    df = cl_S1.import_data()
 
     # Learn Noise Model parameters
 
     init_paras_arr = [ np.asarray([ -2.046736,    1.539405,    1.234712,    6.652190,  -9.714225]), \
-                    np.asarray([-2.02192528,   0.45220384,   1.06806274, -10.18866972]), \
-                     np.asarray([-2.15206189,  -9.46699067])
+                       np.asarray([-2.02192528,   0.45220384,   1.06806274, -10.18866972]), \
+                       np.asarray([-2.15206189,  -9.46699067])
                  ]
 
     if options.Negative_bino_poisson:
@@ -101,8 +101,8 @@ def main():
         noise_model = 2
         init_paras = init_paras_arr[noise_model]
 
-    null_model = Noise_Model() 
-    null_model.learn_null_model(df, noise_model, init_paras)
+    null_model = Noise_Model(df) 
+    null_model.learn_null_model(noise_model, init_paras, "null_model_"+noise_model+"_params.txt")
 
 
 

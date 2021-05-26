@@ -1,0 +1,22 @@
+# Mods
+
+- Noise model with constructor that imports the data builds sparse repr.
+- Data can be a 2d list of counts or a Dataframe having two columns "counts1", "counts2".
+- The default labels "Clone_count" are substituted with "counts" wherever they appear, 
+for the sake of keeping the notation general and not immunology-specific.
+- The Data_Process class does not ask anymore for the clone fractions and sequences, 
+which are never used in the analysis (readme and examples modified accordingly).
+- All the internal methods used only for computation of Noise and Expansion model are now private.
+- The sparse representation is now a class variable and is removed from all the arguments 
+of the class functions.
+- Added option for choosing or not to print the found parameters to file.
+- Added option verbose for printing info during the algorithm.
+- Added default initial parameters for each model.
+- Common functions between classes are defined in a utility file.
+- Expansion_model constructor imports data and builds sparse repr.
+- Expansion model has some internal vars to reduce n arguments.
+- expansion_table in Expansion model now return the final table instead of printing it
+to file 
+
+
+

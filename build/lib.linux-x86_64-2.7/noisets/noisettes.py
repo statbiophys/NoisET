@@ -746,7 +746,7 @@ class Expansion_Model:
 
 
 
-    def expansion_table(self, paras_1, paras_2, noise_model, pval_threshold, smed_threshold, out_path=None):
+    def expansion_table(self, paras_1, paras_2, noise_model, pval_threshold, smed_threshold):
 
         L_surface, Pn1n2_s_d, Pn0n0_s_d, svec = self.learning_dynamics_expansion(paras_1, paras_2, noise_model)
         npoints= 50 # same as in learning_dynamics_expansion
@@ -759,10 +759,8 @@ class Expansion_Model:
         optalp=alpvec[maxinds[1]]
         optPs= self._get_Ps(optalp,optsbar,smax,s_step)
 
-        table=self.build_table(svec, optPs, Pn1n2_s_d, Pn0n0_s_d, pval_threshold, smed_threshold)
-        if type(out_path)==str:
-             table.to_csv(outpath,sep='\t',index=False)
-        return table
+        return self.build_table(svec, optPs, Pn1n2_s_d, Pn0n0_s_d, pval_threshold, smed_threshold)
+
 
 #============================================Generate Synthetic Data =============================================================
 

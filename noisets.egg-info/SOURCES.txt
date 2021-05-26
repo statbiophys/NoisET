@@ -1,0 +1,13 @@
+README.md
+setup.py
+noisets/__init__.py
+noisets/detection_learning.py
+noisets/generator.py
+noisets/noise_learning.py
+noisets/noisettes.py
+noisets/utils.py
+noisets.egg-info/PKG-INFO
+noisets.egg-info/SOURCES.txt
+noisets.egg-info/dependency_links.txt
+noisets.egg-info/entry_points.txt
+noisets.egg-info/top_level.txt

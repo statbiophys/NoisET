@@ -1,0 +1,5 @@
+[console_scripts]
+noiset-detection = noisets.detection_learning:main
+noiset-noise = noisets.noise_learning:main
+noiset-nullgenerator = noisets.generator:main
+

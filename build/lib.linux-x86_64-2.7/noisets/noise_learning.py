@@ -1,6 +1,6 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""Command line script to learn the detection model and spot responding clones to a stimulus from two samples taken at two different time points 
-for second function of NoisET (2)
+"""Command line script to learn the null model parameters for first function of NoisET (1)
 
    Copyright (C) 2021 Meriem Bensouda Koraichi
 
@@ -19,23 +19,17 @@ for second function of NoisET (2)
 
 import os
 import numpy as np
-import pandas as pd
-
 from optparse import OptionParser
 from noisets.noisettes import Data_Process
-from noisets.noisettes import Expansion_Model
+from noisets.noisettes import Noise_Model
 
 def main():
 
     """
-    Detect responding clones
+    Learn noise parameters
     noise_model = 0 : Negative Binomial + Poisson
     noise_model = 1 : Negative Binomial
     noise_model = 2 : Poisson
-
-
-    pval : choose pval limit to detect clones
-    smedthreshold: choose logfoldchange limit to detect clones - see Methods of README for more conceptual details
     """
 
     parser = OptionParser(conflict_handler='resolve')
@@ -49,34 +43,25 @@ def main():
     parser.add_option('--path', type = str, metavar='PATH/TO/FILE', dest = 'path',  help='set path name to file ')
     parser.add_option('--f1', type = str, metavar='filename1', dest = 'filename1',  help='name of first sample')
     parser.add_option('--f2', type = str, metavar='filename2', dest = 'filename2', help='name of second sample')
-    parser.add_option('--output', type = str, metavar='detection_filename', dest = 'detect_filename',  help='set path name to file ')
-
 
     #Characteristics of data-sets
+
     parser.add_option('--specify', action = 'store_true', dest = 'give_details', default= False, help = 'give names of data columns')
     #parser.add_option('--freq', type = str, metavar='frequencies', dest = 'freq_label', help=' clone fractions - data - label ')
     parser.add_option('--counts', type = str, metavar='counts', dest = 'count_label', help=' clone counts - data - label ')
     parser.add_option('--ntCDR3', type = str, metavar='ntCDR3label', dest = 'ntCDR3_label', help=' CDR3 nucleotides sequences - data - label ')
     #parser.add_option('--AACDR3', type = str, metavar='AACDR3label', dest = 'AACDR3_label', help=' CDR3 Amino acids - data - label ')
 
-    # Null model parameters     
-    parser.add_option('--nullpara1', type = str, metavar='nullpara1filename', dest = 'nullparastime1',  help= 'Null parameters at first time point')
-    parser.add_option('--nullpara2', type = str, metavar='nullpara2filename', dest = 'nullparastime2', help= 'Null parameters at second time point')
-
-
-    # Thresholds parameters 
-    parser.add_option('--pval', type = float, metavar='pvaluethreshol', dest = 'pval',  help='set pval threshold value for detection of responding clones')
-    parser.add_option('--smedthresh', type = float, metavar='smedthreshold', dest = 'smed',  help='set  mediane threshold value  for detection of responding clones ')
-
-
 
     (options, args) = parser.parse_args()
+
 
     ## Code 
     ## Load data
     path = options.path
     filename1 = options.filename1 # first biological replicate
     filename2 = options.filename2 # second biological replicate
+
     if options.give_details:
         colnames1 = [options.count_label, options.ntCDR3_label] #colnames that will change if you work with a different data-set
         colnames2 = [options.count_label, options.ntCDR3_label]
@@ -85,6 +70,7 @@ def main():
         colnames1 = ['Clone count', 'N. Seq. CDR3'] #colnames that will change if you work with a different data-set
         colnames2 = ['Clone count', 'N. Seq. CDR3'] 
 
+
     # check 
     cl_S1 = Data_Process(path, filename1, filename2, [colnames1[1], colnames2[1]],  [colnames1[0], colnames2[0]])
     print("First Filename is : " , cl_S1.filename1)
@@ -92,40 +78,35 @@ def main():
     print("Name of count columns are : ", [colnames1[0], colnames2[0]])
     print("Name of id columns are : ", [colnames1[1], colnames2[1]])
 
-    df_1 = pd.read_csv(options.nullparastime1, sep ='\t')
-    paras_1 = np.array(df_1['value'])
-    print('paras time 1: ' + str(paras_1)) 
-
-    df_2 = pd.read_csv(options.nullparastime2, sep ='\t')
-    paras_2 = np.array(df_2['value'])
-    print('paras time 2: ' + str(paras_2)) 
-
-
     # Create dataframe
 
     df = cl_S1.import_data()
 
+    # Learn Noise Model parameters
+
+    init_paras_arr = [ np.asarray([ -2.046736,    1.539405,    1.234712,    6.652190,  -9.714225]), \
+                       np.asarray([-2.02192528,   0.45220384,   1.06806274, -10.18866972]), \
+                       np.asarray([-2.15206189,  -9.46699067])
+                 ]
+
     if options.Negative_bino_poisson:
         noise_model = 0
+        init_paras = init_paras_arr[noise_model]
 
     elif options.Negative_bino:
         noise_model = 1
+        init_paras = init_paras_arr[noise_model]
 
     elif options.Poisson:
         noise_model = 2
+        init_paras = init_paras_arr[noise_model]
 
-    ## Expansion Model
+    null_model = Noise_Model(df) 
+    null_model.learn_null_model(noise_model, init_paras)
 
-    expansion = Expansion_Model(df)
-    pval_threshold = options.pval 
-    smed_threshold = options.smed
-
-    outpath = options.detect_filename + filename1 + filename2
-
-    expansion.expansion_table(outpath, paras_1, paras_2, df, noise_model, pval_threshold, 
-                              smed_threshold, options.detect_filename+"_expanded.csv")
 
 
 if __name__ == '__main__': main()
 
     
+

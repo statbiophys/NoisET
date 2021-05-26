@@ -35,99 +35,75 @@ from scipy.stats import rv_discrete
 from datetime import datetime, date
 from scipy.optimize import minimize
 
-import utils as ut
-
 
 #===============================Data-Pre-Processing===================================
 
 class Data_Process():
 
-    def __init__(self, path, filename1, filename2, id_labels, count_labels, 
-                 delimiters=['\t','\t']):
-        """
-        Initialize the tables of counts of the two samples. The tables can be tsv files
-        or gz-compressed tsv files. 
-        Arguments:
-            path: string variable specifying the path to the data-set directory
-            filename1: string specifying the name of the first sample associated 
-                to the first sample
-            filename2: string specifying the name of the second sample associated 
-                to the second sample
-            id_labels: pair of strings which says the coulmn of the table in the two
-                files containing the identifier of the count (e.g. the id of the clone 
-                CDR3 seuqnece)
-            count_labels: pair of strings which says the coulmn of the table in the two
-                files containing the counts
-        """
+    """Explain this class of methods 
+    path : string variable specifying the path to the data-set repository
+    filename1 : string specifying the name of the first sample associated to indiviual X
+    filename2 : string specifying the name of the second sample associated to indiviual X
+  
+    colnames1 : list of columns names of data-set - first sample
+    colnames2 : list of columns names of data-set - second sample """
+
+    def __init__(self, path, filename1, filename2, colnames1,  colnames2):
         self.path = path
         self.filename1 = filename1
         self.filename2 = filename2
-        self.count_labels = count_labels
-        self.id_labels = id_labels
-        self.delimiters = delimiters
+        self.colnames1 = colnames1
+        self.colnames2 = colnames2
     
 
     def import_data(self):
-        """
-        Import the tables with the parameters specified in the constructor
+        '''
+        Reads in Yellow fever data from two datasets and merges based on nt sequence.
+        Outputs dataframe of pair counts for all clonotypes.
+        Uses specified column names and headerline in stored fasta file.
         
-        """
+        '''
 
         mincount = 0
         maxcount = np.inf
         
-        #headerline=0 #line number of headerline
-        #newnames=['Clone_fraction','Clone_count','ntCDR3','AACDR3']
-        count_label = 'counts'
-        id_label = 'id'
+        headerline=0 #line number of headerline
+        newnames=['Clone_fraction','Clone_count','ntCDR3','AACDR3']   
 
         if self.filename1[-2:] == 'gz':
-            chunk1=pd.read_csv(self.path+self.filename1, delimiter=self.delimiters[0], 
-                               compression = 'gzip')
+            F1Frame_chunk=pd.read_csv(self.path + self.filename1, delimiter='\t',usecols=self.colnames1,header=headerline, compression = 'gzip')[self.colnames1]
         else:
-            chunk1=pd.read_csv(self.path+self.filename1, delimiter=self.delimiters[0])
-        chunk1 = chunk1.loc[:,[self.id_labels[0], self.count_labels[0]]]
+            F1Frame_chunk=pd.read_csv(self.path + self.filename1, delimiter='\t',usecols=self.colnames1,header=headerline)[self.colnames1]
 
         if self.filename2[-2:] == 'gz':
-            chunk2=pd.read_csv(self.path+self.filename2, delimiter=self.delimiters[1], 
-                               compression = 'gzip')
+            F2Frame_chunk=pd.read_csv(self.path + self.filename2, delimiter='\t',usecols=self.colnames2,header=headerline, compression = 'gzip')[self.colnames2]
+
         else:
-            chunk2=pd.read_csv(self.path+self.filename2, delimiter=self.delimiters[1])
-        chunk2 = chunk2.loc[:,[self.id_labels[1], self.count_labels[1]]]
+            F2Frame_chunk=pd.read_csv(self.path + self.filename2, delimiter='\t',usecols=self.colnames2,header=headerline)[self.colnames2]
 
-        chunk1 = chunk1.rename(columns={self.id_labels[0]: id_label, 
-                                        self.count_labels[0]: count_label})
-        chunk2 = chunk2.rename(columns={self.id_labels[1]: id_label, 
-                                        self.count_labels[1]: count_label})
-
-        suffixes=('1','2')
-        mergedFrame=pd.merge(chunk1, chunk2, on=id_label, suffixes=suffixes, how='outer')
-
-        for labelit in suffixes:
-            mergedFrame.loc[:,count_label+labelit].fillna(int(0),inplace=True)
-            mergedFrame.loc[:,count_label+labelit].astype(int)
-
-        # Check for duplicates??
-
-        #def dummy(x):
-        #    val=x[0]
-        #    if pd.isnull(val):
-        #        val=x[1]    
-        #    return val
-
-        # Ask Meriem what's happening next:
-        #mergedFrame.loc[:,newnames[3]+suffixes[0]]=mergedFrame.loc[:,[newnames[3]+suffixes[0],newnames[3]+suffixes[1]]].apply(dummy,axis=1) #assigns AA sequence to clones, creates duplicates
-        #mergedFrame.drop(newnames[3]+suffixes[1], 1,inplace=True) #removes duplicates
-        #mergedFrame.rename(columns = {newnames[3]+suffixes[0]:newnames[3]}, inplace = True)
-        #mergedFrame=mergedFrame[[newname+suffix for newname in newnames[:2] for suffix in suffixes]+[newnames[2],newnames[3]]]
+        F1Frame_chunk.columns=newnames
+        F2Frame_chunk.columns=newnames
+        suffixes=('_1','_2')
+        mergedFrame=pd.merge(F1Frame_chunk,F2Frame_chunk,on=newnames[2],suffixes=suffixes,how='outer')
+        for nameit in [0,1]:
+            for labelit in suffixes:
+                mergedFrame.loc[:,newnames[nameit]+labelit].fillna(int(0),inplace=True)
+                if nameit==1:
+                    mergedFrame.loc[:,newnames[nameit]+labelit].astype(int)
+        def dummy(x):
+            val=x[0]
+            if pd.isnull(val):
+                val=x[1]    
+            return val
+        mergedFrame.loc[:,newnames[3]+suffixes[0]]=mergedFrame.loc[:,[newnames[3]+suffixes[0],newnames[3]+suffixes[1]]].apply(dummy,axis=1) #assigns AA sequence to clones, creates duplicates
+        mergedFrame.drop(newnames[3]+suffixes[1], 1,inplace=True) #removes duplicates
+        mergedFrame.rename(columns = {newnames[3]+suffixes[0]:newnames[3]}, inplace = True)
+        mergedFrame=mergedFrame[[newname+suffix for newname in newnames[:2] for suffix in suffixes]+[newnames[2],newnames[3]]]
+        filterout=((mergedFrame.Clone_count_1<mincount) & (mergedFrame.Clone_count_2==0)) | ((mergedFrame.Clone_count_2<mincount) & (mergedFrame.Clone_count_1==0)) #has effect only if mincount>0
+        number_clones=len(mergedFrame)
+        return number_clones,mergedFrame.loc[((mergedFrame.Clone_count_1<=maxcount) & (mergedFrame.Clone_count_2<=maxcount)) & ~filterout]
         
-        # TODO: ask in input mincount and maxcount
-        #filterout=((mergedFrame.Clone_count_1<mincount) & (mergedFrame.Clone_count_2==0)) | ((mergedFrame.Clone_count_2<mincount) & (mergedFrame.Clone_count_1==0)) #has effect only if mincount>0
-        #number_clones=len(mergedFrame)
-        #return number_clones,mergedFrame.loc[((mergedFrame.Clone_count_1<=maxcount) & (mergedFrame.Clone_count_2<=maxcount)) & ~filterout]
-        
-        return mergedFrame
-
+            
 
 #===============================Noise-Model=========================================
 
@@ -138,92 +114,175 @@ class Noise_Model:
     creation of an oject + methods to learn null noise model"""
 
 
-    def __init__(self, data, count_labels=['counts1', 'counts2'], verbose=True):
+    def get_sparserep(self, df): 
         """
-        Compute the noise model given the data used as input.
-        - pandas.DataFrame having two colums with label specified in count_labels.
-        - a 2-dim list which contains all the pairs [n1, n2] of counts.
+        Tranforms {(n1,n2)} data stored in pandas dataframe to a sparse 1D representation.
+        unicountvals_1(2) are the unique values of n1(2).
+        sparse_rep_counts gives the counts of unique pairs.
+        ndn1(2) is the index of unicountvals_1(2) giving the value of n1(2) in that unique pair.
+        len(indn1)=len(indn2)=len(sparse_rep_counts)"""
+        
+        counts = df.loc[:,['Clone_count_1', 'Clone_count_2']]
+        counts['paircount'] = 1  # gives a weight of 1 to each observed clone
+
+        clone_counts = counts.groupby(['Clone_count_1', 'Clone_count_2']).sum()
+        sparse_rep_counts = np.asarray(clone_counts.values.flatten(), dtype=int)
+        clonecountpair_vals = clone_counts.index.values
+        indn1 = np.asarray([clonecountpair_vals[it][0] for it in range(len(sparse_rep_counts))], dtype=int)
+        indn2 = np.asarray([clonecountpair_vals[it][1] for it in range(len(sparse_rep_counts))], dtype=int)
+        NreadsI = np.sum(counts['Clone_count_1'])
+        NreadsII = np.sum(counts['Clone_count_2'])
+
+        unicountvals_1, indn1 = np.unique(indn1, return_inverse=True)
+        unicountvals_2, indn2 = np.unique(indn2, return_inverse=True)
+
+        return indn1, indn2, sparse_rep_counts, unicountvals_1, unicountvals_2, NreadsI, NreadsII
+
+
+
+    def NegBinPar(self,m,v,mvec): 
+        '''
+        Same as NegBinParMtr, but for m and v being scalars.
+        Assumes m>0.
+        Output is (len(mvec),) array
+        '''
+        mmax=mvec[-1]
+        p = 1-m/v
+        r = m*m/v/p
+        NBvec=np.arange(mmax+1,dtype=float)   
+        NBvec[1:]=np.log((NBvec[1:]+r-1)/NBvec[1:]*p) #vectorization won't help unfortuneately here since log needs to be over array
+        NBvec[0]=r*math.log(m/v)
+        NBvec=np.exp(np.cumsum(NBvec)[mvec]) #save a bit here
+        return NBvec
+
+    def NegBinParMtr(self,m,v,nvec): #speed up only insofar as the log and exp are called once on array instead of multiple times on rows
+        ''' 
+        computes NegBin probabilities over the ordered (but possibly discontiguous) vector (nvec) 
+        for mean/variance combinations given by the mean (m) and variance (v) vectors. 
+        Note that m<v for negative binomial.
+        Output is (len(m),len(nvec)) array
+        '''
+        nmax=nvec[-1]
+        p = 1-m/v
+        r = m*m/v/p
+        NBvec=np.arange(nmax+1,dtype=float)
+        NBvec=np.log((NBvec+r[:,np.newaxis]-1)*(p[:,np.newaxis]/NBvec))
+        NBvec[:,0]=r*np.log(m/v) #handle NBvec[0]=0, treated specially when m[0]=0, see below
+        NBvec=np.exp(np.cumsum(NBvec,axis=1)) #save a bit here
+        if m[0]==0:
+            NBvec[0,:]=0.
+            NBvec[0,0]=1.
+        NBvec=NBvec[:,nvec]
+        return NBvec
+
+    def PoisPar(self, Mvec,unicountvals):
+        #assert Mvec[0]==0, "first element needs to be zero"
+        nmax=unicountvals[-1]
+        nlen=len(unicountvals)
+        mlen=len(Mvec)
+        Nvec=unicountvals
+        logNvec=-np.insert(np.cumsum(np.log(np.arange(1,nmax+1))),0,0.)[unicountvals] #avoid n=0 nans  
+        Nmtr=np.exp(Nvec[np.newaxis,:]*np.log(Mvec)[:,np.newaxis]+logNvec[np.newaxis,:]-Mvec[:,np.newaxis]) # np.log(Mvec) throws warning: since log(0)=-inf
+        if Mvec[0]==0:
+            Nmtr[0,:]=np.zeros((nlen,)) #when m=0, n=0, and so get rid of nans from log(0)
+            Nmtr[0,0]=1. #handled belowacq_model_type
+        if unicountvals[0]==0: #if n=0 included get rid of nans from log(0)
+            Nmtr[:,0]=np.exp(-Mvec)
+        return Nmtr
+
+    def get_rhof(self,alpha_rho, nfbins,fmin,freq_dtype):
+        '''
+        generates power law (power is alpha_rho) clone frequency distribution over 
+        freq_nbins discrete logarithmically spaced frequences between fmin and 1 of dtype freq_dtype
+        Outputs log probabilities obtained at log frequencies'''
+        fmax=1e0
+        logfvec=np.linspace(np.log10(fmin),np.log10(fmax), nfbins)
+        logfvec=np.array(np.log(np.power(10,logfvec)) ,dtype=freq_dtype).flatten()  
+        logrhovec=logfvec*alpha_rho
+        integ=np.exp(logrhovec+logfvec,dtype=freq_dtype)
+        normconst=np.log(np.dot(np.diff(logfvec)/2.,integ[1:]+integ[:-1]))
+        logrhovec-=normconst 
+        return logrhovec,logfvec, normconst
+
+
+    def get_logPn_f(self,unicounts,Nreads,logfvec, noise_model, paras):
+
+        """
         """
 
-        df = ut.data_parser(data, count_labels)
-        self.verbose = verbose
-        self.sparserep = ut.get_sparserep(df)
-
-
-    def learn_null_model(self, noise_model, init_paras=[],  print_to_path=None):
-        """
-        Performs constrained maximization of null model likelihood for finding the 
-        noise-model parameters of the data.
-        Arguments:
-            noise_model: 0 for a negative binomial poisson, 1 for a negative binomial
-                2 for a poisson.
-            init_paras: initial guesses of the parameters. If empty list a default init 
-                condition is chosen
-            print_to_path: if a string, it prints the parameters to the specified path
-        """
-
-        # constraint type 1 gives only low error modes, see paper for details.
-        constr_type = 1
 
         # Choice of the model:
-        # Parameters initialization depending on the model 
-        if noise_model < 1:
-            parameter_labels = ['alph_rho', 'beta', 'alpha', 'm_total', 'fmin']
-            if len(init_paras)==0:
-                init_paras = np.array([-2.0, 1.5, 1.2, 6.7, -9.7])
-        elif noise_model == 1:
-            parameter_labels = ['alph_rho', 'beta', 'alpha', 'fmin']
-            if len(init_paras)==0:
-                init_paras = np.array([-2.0, 0.45, 1.1, -10.0])
-        else:
-            parameter_labels = ['alph_rho', 'fmin']
-            if len(init_paras)==0:
-                init_paras = np.array([-2.1,  -9.5])
+        
+        if noise_model<1:
 
-        assert len(parameter_labels) == len(init_paras), "number of model and initial paras differ!"
+            m_total=float(np.power(10, paras[3])) 
+            r_c=Nreads/m_total
+        if noise_model<2:
 
-        condict = {'type': 'eq', 'fun': self._nullmodel_constr_fn, 'args': (noise_model, constr_type)}
-
-
-        partialobjfunc = partial(self._get_Pn1n2, noise_model=noise_model)
-        nullfunctol = 1e-6
-        nullmaxiter = 200
-
-        if self.verbose:
-            header = ['Iter'] + parameter_labels
-            print(''.join(['{' + str(it) + ':9s} ' for it in range(len(init_paras) + 1)]).format(*header))
+            beta_mv= paras[1]
+            alpha_mv=paras[2]
             
-        global curr_iter
-        curr_iter = 1
-        callbackp = partial(self._callback, nparas=len(init_paras), noise_model= noise_model)
-        outstruct = minimize(partialobjfunc, init_paras, method='SLSQP', callback=callbackp, constraints=condict,
-                        options={'ftol': nullfunctol, 'disp': True, 'maxiter': nullmaxiter})
-            
-        constr_value = self._nullmodel_constr_fn(outstruct.x, noise_model, constr_type)
+        if noise_model<1: #for models that include cell counts
+            #compute parametrized range (mean-sigma,mean+5*sigma) of m values (number of cells) conditioned on n values (reads) appearing in the data only 
+            nsigma=5.
+            nmin=300.
+            #for each n, get actual range of m to compute around n-dependent mean m
+            m_low =np.zeros((len(unicounts),),dtype=int)
+            m_high=np.zeros((len(unicounts),),dtype=int)
+            for nit,n in enumerate(unicounts):
+                mean_m=n/r_c
+                dev=nsigma*np.sqrt(mean_m)
+                m_low[nit] =int(mean_m-  dev) if (mean_m>dev**2) else 0                         
+                m_high[nit]=int(mean_m+5*dev) if (      n>nmin) else int(10*nmin/r_c)
+            m_cellmax=np.max(m_high)
+            #across n, collect all in-range m
+            mvec_bool=np.zeros((m_cellmax+1,),dtype=bool) #cheap bool
+            nvec=range(len(unicounts))
+            for nit in nvec:
+                mvec_bool[m_low[nit]:m_high[nit]+1]=True  #mask vector
+            mvec=np.arange(m_cellmax+1)[mvec_bool]                
+            #transform to in-range index
+            for nit in nvec:
+                m_low[nit]=np.where(m_low[nit]==mvec)[0][0]
+                m_high[nit]=np.where(m_high[nit]==mvec)[0][0]
 
-        if noise_model < 1:
-            parameter_labels = ['alph_rho', 'beta', 'alpha', 'm_total', 'fmin']
-        elif noise_model == 1:
-            parameter_labels = ['alph_rho', 'beta', 'alpha', 'fmin']
+        Pn_f=np.zeros((len(logfvec),len(unicounts)))
+        if noise_model==0:
+
+            mean_m=m_total*np.exp(logfvec)
+            var_m=mean_m+beta_mv*np.power(mean_m,alpha_mv)
+            Poisvec = self.PoisPar(mvec*r_c,unicounts)
+            for f_it in range(len(logfvec)):
+                NBvec=self.NegBinPar(mean_m[f_it],var_m[f_it],mvec)
+                for n_it,n in enumerate(unicounts):
+                    Pn_f[f_it,n_it]=np.dot(NBvec[m_low[n_it]:m_high[n_it]+1],Poisvec[m_low[n_it]:m_high[n_it]+1,n_it]) 
+        
+        elif noise_model==1:
+
+            mean_n=Nreads*np.exp(logfvec)
+            var_n=mean_n+beta_mv*np.power(mean_n,alpha_mv)
+            Pn_f = self.NegBinParMtr(mean_n,var_n,unicounts)
+        elif noise_model==2:
+
+            mean_n=Nreads*np.exp(logfvec)
+            Pn_f= self.PoisPar(mean_n,unicounts)
         else:
-            parameter_labels = ['alph_rho', 'fmin']
-        self.params = {'label' : parameter_labels, 'value': outstruct.x}
-        df = pd.DataFrame(data = self.params)
+            print('acq_model is 0,1, or 2 only')
 
-        if type(print_to_path) == str:
-            df.to_csv(print_to_path, sep = '\t')
-
-        #np.save('nullpara' + str(noise_model), outstruct.x)
-
-        return outstruct, constr_value
-
-
+        return np.log(Pn_f)
 
     #-----------------------------Null-Model-optimization--------------------------
         
-    def _get_Pn1n2(self, paras, noise_model):
+    def get_Pn1n2(self, paras, sparse_rep, noise_model):
 
-        indn1,indn2,sparse_rep_counts,unicountvals_1,unicountvals_2,NreadsI,NreadsII = self.sparserep
+        """
+        
+        """
+        # Choice of the model:
+
+
+
+        indn1,indn2,sparse_rep_counts,unicountvals_1,unicountvals_2,NreadsI,NreadsII = sparse_rep
             
         nfbins = 1200
         freq_dtype = float
@@ -234,14 +293,14 @@ class Noise_Model:
         fmin = np.power(10,paras[-1])
 
         # 
-        logrhofvec, logfvec, normconst = ut.get_rhof(alpha,nfbins,fmin,freq_dtype)
+        logrhofvec, logfvec, normconst = self.get_rhof(alpha,nfbins,fmin,freq_dtype)
 
         # 
 
         logfvec_tmp=deepcopy(logfvec)
 
-        logPn1_f = ut.get_logPn_f(unicountvals_1, NreadsI,logfvec_tmp, noise_model, paras)
-        logPn2_f = ut.get_logPn_f(unicountvals_2, NreadsII,logfvec_tmp, noise_model, paras)
+        logPn1_f = self.get_logPn_f(unicountvals_1, NreadsI,logfvec_tmp, noise_model, paras)
+        logPn2_f = self.get_logPn_f(unicountvals_2, NreadsII,logfvec_tmp, noise_model, paras)
 
         # for the trapezoid integral methods
 
@@ -259,23 +318,25 @@ class Noise_Model:
         Pn1n2 /= 1. - Pn0n0  # renormalize
         return -np.dot(sparse_rep_counts, np.where(Pn1n2 > 0, np.log(Pn1n2), 0)) / float(np.sum(sparse_rep_counts))
 
+    
 
-    def _callback(self, paras, nparas, noise_model):
+
+    def callback(self, paras, nparas, sparse_rep, noise_model):
         '''prints iteration info. called by scipy.minimize'''
 
         global curr_iter
         #curr_iter = 0
         global Loss_function 
-        if self.verbose:
-            print(''.join(['{0:d} ']+['{'+str(it)+':3.6f} ' for it in range(1,len(paras)+1)]).format(*([curr_iter]+list(paras))))
-            #print ('{' + str(len(paras)+1) + ':3.6f}'.format( [self.get_Pn1n2(paras, sparse_rep, acq_model_type)]))
-            Loss_function = self._get_Pn1n2(paras, noise_model)
-            print(Loss_function)
+        print(''.join(['{0:d} ']+['{'+str(it)+':3.6f} ' for it in range(1,len(paras)+1)]).format(*([curr_iter]+list(paras))))
+        #print ('{' + str(len(paras)+1) + ':3.6f}'.format( [self.get_Pn1n2(paras, sparse_rep, acq_model_type)]))
+        Loss_function = self.get_Pn1n2(paras, sparse_rep, noise_model)
+        print(Loss_function)
         curr_iter += 1
         
 
+
     # Constraints for the Null-Model, no filtered 
-    def _nullmodel_constr_fn(self, paras, noise_model, constr_type):
+    def nullmodel_constr_fn(self, paras, sparse_rep, noise_model, constr_type):
             
         '''
         returns either or both of the two level-set functions: log<f>-log(1/N), with N=Nclones/(1-P(0,0)) and log(Z_f), with Z_f=N<f>_{n+n'=0} + sum_i^Nclones <f>_{f|n,n'}
@@ -283,7 +344,7 @@ class Noise_Model:
 
     # Choice of the model: 
 
-        indn1, indn2, sparse_rep_counts, unicountvals_1, unicountvals_2, NreadsI, NreadsII = self.sparserep
+        indn1, indn2, sparse_rep_counts, unicountvals_1, unicountvals_2, NreadsI, NreadsII = sparse_rep
 
         #Variables that would be chosen in the future by the user 
         nfbins = 1200
@@ -292,14 +353,14 @@ class Noise_Model:
         alpha = paras[0]  # power law exponent
         fmin = np.power(10, paras[-1]) # true minimal frequency 
 
-        logrhofvec, logfvec, normconst = ut.get_rhof(alpha,nfbins,fmin,freq_dtype)
+        logrhofvec, logfvec, normconst = self.get_rhof(alpha,nfbins,fmin,freq_dtype)
         dlogfby2 = np.diff(logfvec) / 2.  # 1/2 comes from trapezoid integration below
 
         integ = np.exp(logrhofvec + 2 * logfvec)
         avgf_ps = np.dot(dlogfby2, integ[:-1] + integ[1:])
 
-        logPn1_f = ut.get_logPn_f(unicountvals_1, NreadsI, logfvec, noise_model, paras)
-        logPn2_f = ut.get_logPn_f(unicountvals_2, NreadsII, logfvec, noise_model, paras)
+        logPn1_f = self.get_logPn_f(unicountvals_1, NreadsI, logfvec, noise_model, paras)
+        logPn2_f = self.get_logPn_f(unicountvals_2, NreadsII, logfvec, noise_model, paras)
 
         integ = np.exp(logPn1_f[:, 0] + logPn2_f[:, 0] + logrhofvec + logfvec)
         Pn0n0 = np.dot(dlogfby2, integ[1:] + integ[:-1])
@@ -323,6 +384,7 @@ class Noise_Model:
         Z = np.exp(logNclones + np.log(Pn0n0) + log_avgf_n0n0) + np.exp(log_sumavgf)
 
         C2 = np.log(Z)
+
         
         # print('C1:'+str(C1)+' C2:'+str(C2))
         if constr_type == 0:
@@ -333,6 +395,66 @@ class Noise_Model:
             return C1, C2
 
 
+        
+        # Null-Model optimization learning 
+
+    def learn_null_model(self, df, noise_model, init_paras,  display_loss_function = False):  # constraint type 1 gives only low error modes, see paper for details.
+        '''
+        performs constrained maximization of null model likelihood
+        '''
+            
+        # Data introduction
+        sparse_rep = self.get_sparserep(df)
+        constr_type = 1
+
+        # Choice of the model:
+        # Parameters initialization depending on the model 
+        if noise_model < 1:
+            parameter_labels = ['alph_rho', 'beta', 'alpha', 'm_total', 'fmin']
+        elif noise_model == 1:
+            parameter_labels = ['alph_rho', 'beta', 'alpha', 'fmin']
+        else:
+            parameter_labels = ['alph_rho', 'fmin']
+
+        assert len(parameter_labels) == len(init_paras), "number of model and initial paras differ!"
+
+        condict = {'type': 'eq', 'fun': self.nullmodel_constr_fn, 'args': (sparse_rep, noise_model, constr_type)}
+
+
+        partialobjfunc = partial(self.get_Pn1n2, sparse_rep=sparse_rep, noise_model=noise_model)
+        nullfunctol = 1e-6
+        nullmaxiter = 200
+        header = ['Iter'] + parameter_labels
+        print(''.join(['{' + str(it) + ':9s} ' for it in range(len(init_paras) + 1)]).format(*header))
+            
+        global curr_iter
+        curr_iter = 1
+        callbackp = partial(self.callback, nparas=len(init_paras), sparse_rep = sparse_rep, noise_model= noise_model)
+        outstruct = minimize(partialobjfunc, init_paras, method='SLSQP', callback=callbackp, constraints=condict,
+                        options={'ftol': nullfunctol, 'disp': True, 'maxiter': nullmaxiter})
+            
+        constr_value = self.nullmodel_constr_fn(outstruct.x, sparse_rep, noise_model, constr_type)
+
+        if noise_model < 1:
+            parameter_labels = ['alph_rho', 'beta', 'alpha', 'm_total', 'fmin']
+            d = {'label' : parameter_labels, 'value': outstruct.x}
+            df = pd.DataFrame(data = d)
+        elif noise_model == 1:
+            parameter_labels = ['alph_rho', 'beta', 'alpha', 'fmin']
+            d = {'label' : parameter_labels, 'value': outstruct.x}
+            df = pd.DataFrame(data = d)
+        else:
+            parameter_labels = ['alph_rho', 'fmin']
+            d = {'label' : parameter_labels, 'value': outstruct.x}
+            df = pd.DataFrame(data = d)
+
+
+
+        df.to_csv('nullpara' + str(noise_model)+ '.txt', sep = '\t')
+
+        #np.save('nullpara' + str(noise_model), outstruct.x)
+
+        return outstruct, constr_value
 
 #============================================Differential expression =============================================================
 
@@ -342,22 +464,164 @@ class Expansion_Model:
     Explain Methods for this class
     """
 
-
-    def __init__(self, data, count_labels=['counts1', 'counts2'], 
-                 id_label='id', verbose=True):
+    def get_sparserep(self, df): 
         """
-        Compute the noise model given the data used as input.
-        - pandas.DataFrame having two colums called "counts1" and "counts2".
-        - a 2-dim list which contains all the pairs [n1, n2] of counts.
-        """
+        Tranforms {(n1,n2)} data stored in pandas dataframe to a sparse 1D representation.
+        unicountvals_1(2) are the unique values of n1(2).
+        sparse_rep_counts gives the counts of unique pairs.
+        ndn1(2) is the index of unicountvals_1(2) giving the value of n1(2) in that unique pair.
+        len(indn1)=len(indn2)=len(sparse_rep_counts)"""
+        
+        counts = df.loc[:,['Clone_count_1', 'Clone_count_2']]
+        counts['paircount'] = 1  # gives a weight of 1 to each observed clone
 
-        df = ut.data_parser(data, count_labels, id_label)
-        self.verbose= verbose
-        self.sparserep = ut.get_sparserep(df)
-        self.df = df
+        clone_counts = counts.groupby(['Clone_count_1', 'Clone_count_2']).sum()
+        sparse_rep_counts = np.asarray(clone_counts.values.flatten(), dtype=int)
+        clonecountpair_vals = clone_counts.index.values
+        indn1 = np.asarray([clonecountpair_vals[it][0] for it in range(len(sparse_rep_counts))], dtype=int)
+        indn2 = np.asarray([clonecountpair_vals[it][1] for it in range(len(sparse_rep_counts))], dtype=int)
+        NreadsI = np.sum(counts['Clone_count_1'])
+        NreadsII = np.sum(counts['Clone_count_2'])
+
+        unicountvals_1, indn1 = np.unique(indn1, return_inverse=True)
+        unicountvals_2, indn2 = np.unique(indn2, return_inverse=True)
+
+        return indn1, indn2, sparse_rep_counts, unicountvals_1, unicountvals_2, NreadsI, NreadsII
+
+    
+
+    def NegBinPar(self,m,v,mvec): 
+        '''
+        Same as NegBinParMtr, but for m and v being scalars.
+        Assumes m>0.
+        Output is (len(mvec),) array
+        '''
+        mmax=mvec[-1]
+        p = 1-m/v
+        r = m*m/v/p
+        NBvec=np.arange(mmax+1,dtype=float)   
+        NBvec[1:]=np.log((NBvec[1:]+r-1)/NBvec[1:]*p) #vectorization won't help unfortuneately here since log needs to be over array
+        NBvec[0]=r*math.log(m/v)
+        NBvec=np.exp(np.cumsum(NBvec)[mvec]) #save a bit here
+        return NBvec
 
 
-    def _get_Ps(self, alp, sbar, smax, stp):
+    def NegBinParMtr(self,m,v,nvec): #speed up only insofar as the log and exp are called once on array instead of multiple times on rows
+        ''' 
+        computes NegBin probabilities over the ordered (but possibly discontiguous) vector (nvec) 
+        for mean/variance combinations given by the mean (m) and variance (v) vectors. 
+        Note that m<v for negative binomial.
+        Output is (len(m),len(nvec)) array
+        '''
+        nmax=nvec[-1]
+        p = 1-m/v
+        r = m*m/v/p
+        NBvec=np.arange(nmax+1,dtype=float)
+        NBvec=np.log((NBvec+r[:,np.newaxis]-1)*(p[:,np.newaxis]/NBvec))
+        NBvec[:,0]=r*np.log(m/v) #handle NBvec[0]=0, treated specially when m[0]=0, see below
+        NBvec=np.exp(np.cumsum(NBvec,axis=1)) #save a bit here
+        if m[0]==0:
+            NBvec[0,:]=0.
+            NBvec[0,0]=1.
+        NBvec=NBvec[:,nvec]
+        return NBvec
+
+    def PoisPar(self, Mvec,unicountvals):
+        #assert Mvec[0]==0, "first element needs to be zero"
+        nmax=unicountvals[-1]
+        nlen=len(unicountvals)
+        mlen=len(Mvec)
+        Nvec=unicountvals
+        logNvec=-np.insert(np.cumsum(np.log(np.arange(1,nmax+1))),0,0.)[unicountvals] #avoid n=0 nans  
+        Nmtr=np.exp(Nvec[np.newaxis,:]*np.log(Mvec)[:,np.newaxis]+logNvec[np.newaxis,:]-Mvec[:,np.newaxis]) # np.log(Mvec) throws warning: since log(0)=-inf
+        if Mvec[0]==0:
+            Nmtr[0,:]=np.zeros((nlen,)) #when m=0, n=0, and so get rid of nans from log(0)
+            Nmtr[0,0]=1. #handled belowacq_model_type
+        if unicountvals[0]==0: #if n=0 included get rid of nans from log(0)
+            Nmtr[:,0]=np.exp(-Mvec)
+        return Nmtr
+
+    def get_rhof(self,alpha_rho, nfbins,fmin,freq_dtype):
+        '''
+        generates power law (power is alpha_rho) clone frequency distribution over 
+        freq_nbins discrete logarithmically spaced frequences between fmin and 1 of dtype freq_dtype
+        Outputs log probabilities obtained at log frequencies'''
+        fmax=1e0
+        logfvec=np.linspace(np.log10(fmin),np.log10(fmax), nfbins)
+        logfvec=np.array(np.log(np.power(10,logfvec)) ,dtype=freq_dtype).flatten()  
+        logrhovec=logfvec*alpha_rho
+        integ=np.exp(logrhovec+logfvec,dtype=freq_dtype)
+        normconst=np.log(np.dot(np.diff(logfvec)/2.,integ[1:]+integ[:-1]))
+        logrhovec-=normconst 
+        return logrhovec,logfvec
+
+    
+    def get_logPn_f(self,unicounts,Nreads,logfvec, noise_model, paras):
+
+        """"""
+
+
+        # Choice of the model:
+        
+        if noise_model<1:
+
+            m_total=float(np.power(10, paras[3])) 
+            r_c=Nreads/m_total
+        if noise_model<2:
+
+            beta_mv= paras[1]
+            alpha_mv=paras[2]
+            
+        if noise_model<1: #for models that include cell counts
+            #compute parametrized range (mean-sigma,mean+5*sigma) of m values (number of cells) conditioned on n values (reads) appearing in the data only 
+            nsigma=5.
+            nmin=300.
+            #for each n, get actual range of m to compute around n-dependent mean m
+            m_low =np.zeros((len(unicounts),),dtype=int)
+            m_high=np.zeros((len(unicounts),),dtype=int)
+            for nit,n in enumerate(unicounts):
+                mean_m=n/r_c
+                dev=nsigma*np.sqrt(mean_m)
+                m_low[nit] =int(mean_m-  dev) if (mean_m>dev**2) else 0                         
+                m_high[nit]=int(mean_m+5*dev) if (      n>nmin) else int(10*nmin/r_c)
+            m_cellmax=np.max(m_high)
+            #across n, collect all in-range m
+            mvec_bool=np.zeros((m_cellmax+1,),dtype=bool) #cheap bool
+            nvec=range(len(unicounts))
+            for nit in nvec:
+                mvec_bool[m_low[nit]:m_high[nit]+1]=True  #mask vector
+            mvec=np.arange(m_cellmax+1)[mvec_bool]                
+            #transform to in-range index
+            for nit in nvec:
+                m_low[nit]=np.where(m_low[nit]==mvec)[0][0]
+                m_high[nit]=np.where(m_high[nit]==mvec)[0][0]
+
+        Pn_f=np.zeros((len(logfvec),len(unicounts)))
+        if noise_model==0:
+
+            mean_m=m_total*np.exp(logfvec)
+            var_m=mean_m+beta_mv*np.power(mean_m,alpha_mv)
+            Poisvec = self.PoisPar(mvec*r_c,unicounts)
+            for f_it in range(len(logfvec)):
+                NBvec=self.NegBinPar(mean_m[f_it],var_m[f_it],mvec)
+                for n_it,n in enumerate(unicounts):
+                    Pn_f[f_it,n_it]=np.dot(NBvec[m_low[n_it]:m_high[n_it]+1],Poisvec[m_low[n_it]:m_high[n_it]+1,n_it]) 
+        
+        elif noise_model==1:
+
+            mean_n=Nreads*np.exp(logfvec)
+            var_n=mean_n+beta_mv*np.power(mean_n,alpha_mv)
+            Pn_f = self.NegBinParMtr(mean_n,var_n,unicounts)
+        elif noise_model==2:
+
+            mean_n=Nreads*np.exp(logfvec)
+            Pn_f= self.PoisPar(mean_n,unicounts)
+        else:
+            print('acq_model is 0,1,or 2 only')
+
+        return np.log(Pn_f)
+
+    def get_Ps(self, alp,sbar,smax,stp):
         '''
         generates symmetric exponential distribution over log fold change
         with effect size sbar and nonresponding fraction 1-alp at s=0.
@@ -371,14 +635,13 @@ class Expansion_Model:
         Ps[s_zeroind]+=(1-alp)
         return Ps
 
-    def _callbackFdiffexpr(self, Xi): #case dependent
+    def callbackFdiffexpr(self, Xi): #case dependent
         '''prints iteration info. called scipy.minimize'''
-        
-        if self.verbose:
-            print('{0: 3.6f}   {1: 3.6f}   '.format(Xi[0], Xi[1])+'\n')   
+               
+        print('{0: 3.6f}   {1: 3.6f}   '.format(Xi[0], Xi[1])+'\n')   
     
 
-    def learning_dynamics_expansion_polished(self, paras_1, paras_2,  noise_model):
+    def learning_dynamics_expansion_polished(self, df, paras_1, paras_2,  noise_model):
         """
         Different uses for this function to explain, explain the use of NreadsItrue and NreadsIItrue
         paras : 
@@ -392,14 +655,15 @@ class Expansion_Model:
         time_2 : indication of the second sample extraction time
         """
 
-        indn1,indn2,sparse_rep_counts,unicountvals_1,unicountvals_2,NreadsI,NreadsII = self.sparserep
+        indn1,indn2,sparse_rep_counts,unicountvals_1,unicountvals_2,NreadsI,NreadsII = self.get_sparserep(df)
 
         alpha_rho = paras_1[0]
         fmin = np.power(10,paras_1[-1])
         freq_dtype = 'float64'
         nfbins = 1200 #Accuracy of the integration
 
-        logrhofvec, logfvec, normconst = ut.get_rhof(alpha_rho, nfbins, fmin, freq_dtype)
+
+        logrhofvec, logfvec = get_rhof(self, alpha_rho, nfbins, fmin, freq_dtype)
 
         #Definition of svec
         smax = 25.0     #maximum absolute logfold change value
@@ -435,10 +699,10 @@ class Expansion_Model:
                 Nreads = NreadsII
                 paras = paras_2
             if it == 0:
-                logPn1_f = ut.get_logPn_f( unicounts, Nreads, logfvec_tmp, noise_model, paras)
+                logPn1_f = self.get_logPn_f( unicounts, Nreads, logfvec_tmp, noise_model, paras)
 
             else:
-                logPn2_f = ut.get_logPn_f(unicounts, Nreads, logfvec_tmp, noise_model, paras)
+                logPn2_f = self.get_logPn_f(unicounts, Nreads, logfvec_tmp, noise_model, paras)
 
         #for the trapezoid method
         dlogfby2=np.diff(logfvec)/2 
@@ -459,8 +723,7 @@ class Expansion_Model:
             
     
         N_obs = np.sum(sparse_rep_counts)
-        if self.verbose:
-            print("N_obs: " + str(N_obs))
+        print("N_obs: " + str(N_obs))
     
             
         def cost(PARAS):
@@ -468,12 +731,11 @@ class Expansion_Model:
             alp = PARAS[0]
             sbar = PARAS[1]
 
-            Ps = _get_Ps(self,alp,sbar,smax,s_step)
+            Ps = get_Ps(self,alp,sbar,smax,s_step)
             Pn0n0=np.dot(Pn0n0_s,Ps)
             Pn1n2_ps=np.sum(Pn1n2_s*Ps[:,np.newaxis,np.newaxis],0)
             Pn1n2_ps/=1-Pn0n0
-            if self.verbose:
-                print(Pn0n0)
+            print(Pn0n0)
 
        
 
@@ -483,8 +745,7 @@ class Expansion_Model:
 
     #--------------------------Compute-the-grid-----------------------------------------
         
-        if self.verbose:
-            print('Calculation Surface : \n')
+        print('Calculation Surface : \n')
         st = time.time()
 
         npoints = 20 #to be chosen by the user 
@@ -498,26 +759,23 @@ class Expansion_Model:
         
         alpmesh, sbarmesh = np.meshgrid(alpvec, sbarvec)
         a,b = np.where(LSurface == np.max(LSurface))
-        if self.verbose:
-            print("--- %s seconds ---" % (time.time() - st))
+        print("--- %s seconds ---" % (time.time() - st))
     
     
     #------------------------------Optimization----------------------------------------------
         
         optA = alpmesh[a[0],b[0]]
         optB = sbarmesh[a[0],b[0]]
-
-        if self.verbose:
-            print('polish parameter estimate from '+ str(optA)+' '+str(optB))
+                  
+        print('polish parameter estimate from '+ str(optA)+' '+str(optB))
         initparas=(optA,optB)  
     
 
-        outstruct = minimize(cost, initparas, method='SLSQP', callback=_callbackFdiffexpr, tol=1e-6,options={'ftol':1e-8 ,'disp': True,'maxiter':300})
+        outstruct = minimize(cost, initparas, method='SLSQP', callback=callbackFdiffexpr, tol=1e-6,options={'ftol':1e-8 ,'disp': True,'maxiter':300})
 
         return outstruct.x, Pn1n2_s, Pn0n0_s, svec
 
-
-    def learning_dynamics_expansion(self, paras_1, paras_2, noise_model, display_plot=False):
+    def learning_dynamics_expansion(self, sparse_rep, paras_1, paras_2, noise_model, display_plot=False):
         """
         Different uses for this function to explain, explain the use of NreadsItrue and NreadsIItrue
         paras : 
@@ -525,14 +783,15 @@ class Expansion_Model:
         noise_model: 
         """
 
-        indn1,indn2,sparse_rep_counts,unicountvals_1,unicountvals_2,NreadsI,NreadsII = self.sparserep
+        indn1,indn2,sparse_rep_counts,unicountvals_1,unicountvals_2,NreadsI,NreadsII = sparse_rep
 
         alpha_rho = paras_1[0]
         fmin = np.power(10,paras_1[-1])
         freq_dtype = 'float64'
         nfbins = 1200 #Accuracy of the integration
 
-        logrhofvec, logfvec, normconst = ut.get_rhof(alpha_rho, nfbins, fmin, freq_dtype)
+
+        logrhofvec, logfvec = self.get_rhof(alpha_rho, nfbins, fmin, freq_dtype)
 
         #Definition of svec
         smax = 25.0     #maximum absolute logfold change value
@@ -568,10 +827,10 @@ class Expansion_Model:
                 Nreads = NreadsII
                 paras = paras_2
             if it == 0:
-                logPn1_f = ut.get_logPn_f(unicounts, Nreads, logfvec_tmp, noise_model, paras)
+                logPn1_f = self.get_logPn_f(unicounts, Nreads, logfvec_tmp, noise_model, paras)
 
             else:
-                logPn2_f = ut.get_logPn_f(unicounts, Nreads, logfvec_tmp, noise_model, paras)
+                logPn2_f = self.get_logPn_f(unicounts, Nreads, logfvec_tmp, noise_model, paras)
 
         #for the trapezoid method
         dlogfby2=np.diff(logfvec)/2 
@@ -592,8 +851,7 @@ class Expansion_Model:
             
    
         N_obs = np.sum(sparse_rep_counts)
-        if self.verbose:
-            print("N_obs: " + str(N_obs))
+        print("N_obs: " + str(N_obs))
     
             
         def cost(PARAS):
@@ -601,7 +859,7 @@ class Expansion_Model:
             alp = PARAS[0]
             sbar = PARAS[1]
 
-            Ps = self._get_Ps(alp,sbar,smax,s_step)
+            Ps = self.get_Ps(alp,sbar,smax,s_step)
             Pn0n0=np.dot(Pn0n0_s,Ps)
             Pn1n2_ps=np.sum(Pn1n2_s*Ps[:,np.newaxis,np.newaxis],0)
             Pn1n2_ps/=1-Pn0n0
@@ -614,8 +872,8 @@ class Expansion_Model:
             return Energy
 
     #--------------------------Compute-the-grid-----------------------------------------
-        if self.verbose:
-            print('Calculation Surface : \n')
+        
+        print('Calculation Surface : \n')
         st = time.time()
 
         npoints = 50 #to be chosen by the user 
@@ -629,8 +887,7 @@ class Expansion_Model:
         
         alpmesh, sbarmesh = np.meshgrid(alpvec, sbarvec)
         a,b = np.where(LSurface == np.max(LSurface))
-        if self.verbose:
-            print("--- %s seconds ---" % (time.time() - st))
+        print("--- %s seconds ---" % (time.time() - st))
     
     #---------------------------Plot-the-grid-------------------------------------------
         if display_plot:
@@ -662,7 +919,7 @@ class Expansion_Model:
         return LSurface, Pn1n2_s, Pn0n0_s, svec
  
 
-    def build_table(self, svec, Ps, Pn1n2_s, Pn0n0_s, pthresh, smedthresh):
+    def save_table(self, outpath, svec, Ps,Pn1n2_s, Pn0n0_s,  subset, unicountvals_1_d, unicountvals_2_d, indn1_d, indn2_d, print_expanded, pthresh, smedthresh):
         '''
         takes learned diffexpr model, Pn1n2_s*Ps, computes posteriors over (n1,n2) pairs, and writes to file a table of data with clones as rows and columns as measures of thier posteriors 
         print_expanded=True orders table as ascending by , else descending
@@ -670,7 +927,6 @@ class Expansion_Model:
         smedthresh is the threshold on the posterior median, below which clones are discarded
         '''
 
-        indn1_d,indn2_d,sparse_rep_counts, unicountvals_1_d, unicountvals_2_d, NreadsI, NreadsII = self.sparserep
         Psn1n2_ps=Pn1n2_s*Ps[:,np.newaxis,np.newaxis] 
     
         #compute marginal likelihood (neglect renormalization , since it cancels in conditional below) 
@@ -681,16 +937,14 @@ class Expansion_Model:
         cdfPs_n1n2ps=np.cumsum(Ps_n1n2ps,0)
     
 
-        def dummy(row, cdfPs_n1n2ps, unicountvals_1_d, unicountvals_2_d):
+        def dummy(row,cdfPs_n1n2ps,unicountvals_1_d,unicountvals_2_d):
             '''
             when applied to dataframe, generates 'p-value'-like (null hypo) probability, 1-P(s>0|n1_i,n2_i), where i is the row (i.e. the clone)
             '''
-            return cdfPs_n1n2ps[np.argmin(np.fabs(svec)),row['counts1']==unicountvals_1_d,row['counts2']==unicountvals_2_d][0]
-        
+            return cdfPs_n1n2ps[np.argmin(np.fabs(svec)),row['Clone_count_1']==unicountvals_1_d,row['Clone_count_2']==unicountvals_2_d][0]
         dummy_part=partial(dummy,cdfPs_n1n2ps=cdfPs_n1n2ps,unicountvals_1_d=unicountvals_1_d,unicountvals_2_d=unicountvals_2_d)
     
         cdflabel=r'$1-P(s>0)$'
-        subset = self.df
         subset[cdflabel]=subset.apply(dummy_part, axis=1)
         subset=subset[subset[cdflabel]<pthresh].reset_index(drop=True)
 
@@ -698,8 +952,8 @@ class Expansion_Model:
         data_pairs_ind_1=np.zeros((len(subset),),dtype=int)
         data_pairs_ind_2=np.zeros((len(subset),),dtype=int)
         for it in range(len(subset)):
-            data_pairs_ind_1[it]=np.where(int(subset.iloc[it].counts1)==unicountvals_1_d)[0]
-            data_pairs_ind_2[it]=np.where(int(subset.iloc[it].counts2)==unicountvals_2_d)[0]   
+            data_pairs_ind_1[it]=np.where(int(subset.iloc[it].Clone_count_1)==unicountvals_1_d)[0]
+            data_pairs_ind_2[it]=np.where(int(subset.iloc[it].Clone_count_2)==unicountvals_2_d)[0]   
         #posteriors over data clones
         Ps_n1n2ps_datpairs=Ps_n1n2ps[:,data_pairs_ind_1,data_pairs_ind_2]
     
@@ -726,29 +980,32 @@ class Expansion_Model:
         colnames=(r'$\bar{s}$',r'$s_{max}$',r'$s_{3,high}$',r'$s_{2,med}$',r'$s_{1,low}$')
         for it,coldata in enumerate((mean_est,max_est,shighvec,smedvec,slowvec)):
             subset.insert(0,colnames[it],coldata)
-        #oldcolnames=( 'AACDR3',  'ntCDR3', 'Clone_count_1', 'Clone_count_2', 'Clone_fraction_1', 'Clone_fraction_2')
-        #newcolnames=('CDR3_AA', 'CDR3_nt',        r'$n_1$',        r'$n_2$',           r'$f_1$',           r'$f_2$')
-        #subset=subset.rename(columns=dict(zip(oldcolnames, newcolnames)))
+        oldcolnames=( 'AACDR3',  'ntCDR3', 'Clone_count_1', 'Clone_count_2', 'Clone_fraction_1', 'Clone_fraction_2')
+        newcolnames=('CDR3_AA', 'CDR3_nt',        r'$n_1$',        r'$n_2$',           r'$f_1$',           r'$f_2$')
+        subset=subset.rename(columns=dict(zip(oldcolnames, newcolnames)))
     
         #select only clones whose posterior median pass the given threshold
-        return subset[subset[r'$s_{2,med}$']>smedthresh].sort_values(by=cdflabel,ascending=True)
+        subset=subset[subset[r'$s_{2,med}$']>smedthresh]
+    
+        print("writing to: "+outpath)
+        if print_expanded:
+            subset=subset.sort_values(by=cdflabel,ascending=True)
+            strout='expanded'
+        else:
+            subset=subset.sort_values(by=cdflabel,ascending=False)
+            strout='contracted'
+        subset.to_csv(outpath+'top_'+strout+'.csv',sep='\t',index=False)
+
+
+
+    def expansion_table(self, outpath, paras_1, paras_2, df, noise_model, pval_threshold, smed_threshold):
+
+        """
         
-        # Ask Meriem about contracted 
+        """
 
-        # print("writing to: "+outpath)
-        # if print_expanded:
-        #     subset=subset.sort_values(by=cdflabel,ascending=True)
-        #     strout='expanded'
-        # else:
-        #     subset=subset.sort_values(by=cdflabel,ascending=False)
-        #     strout='contracted'
-        # subset.to_csv(outpath+'top_'+strout+'.csv',sep='\t',index=False)
-
-
-
-    def expansion_table(self, paras_1, paras_2, noise_model, pval_threshold, smed_threshold, out_path=None):
-
-        L_surface, Pn1n2_s_d, Pn0n0_s_d, svec = self.learning_dynamics_expansion(paras_1, paras_2, noise_model)
+        sparse_rep = self.get_sparserep(df)
+        L_surface, Pn1n2_s_d, Pn0n0_s_d, svec = self.learning_dynamics_expansion(sparse_rep, paras_1, paras_2, noise_model)
         npoints= 50 # same as in learning_dynamics_expansion
         smax = 25.0     
         s_step = 0.1
@@ -757,34 +1014,34 @@ class Expansion_Model:
         maxinds=np.unravel_index(np.argmax(L_surface),np.shape(L_surface))
         optsbar=sbarvec[maxinds[0]]
         optalp=alpvec[maxinds[1]]
-        optPs= self._get_Ps(optalp,optsbar,smax,s_step)
+        optPs= self.get_Ps(optalp,optsbar,smax,s_step)
+        pval_expanded = True
 
-        table=self.build_table(svec, optPs, Pn1n2_s_d, Pn0n0_s_d, pval_threshold, smed_threshold)
-        if type(out_path)==str:
-             table.to_csv(outpath,sep='\t',index=False)
-        return table
+        indn1,indn2,sparse_rep_counts, unicountvals_1, unicountvals_2, NreadsI, NreadsII = sparse_rep
+
+        self.save_table(outpath, svec, optPs, Pn1n2_s_d, Pn0n0_s_d,  df, unicountvals_1, unicountvals_2, indn1, indn2, pval_expanded, pval_threshold, smed_threshold)
+
 
 #============================================Generate Synthetic Data =============================================================
 
 class Generator:
 
+    def get_rhof(self, alpha_rho, fmin, freq_nbins=800, freq_dtype='float64'):
 
-    # def get_rhof(self, alpha_rho, fmin, freq_nbins=800, freq_dtype='float64'):
+        '''
+        generates power law (power is alpha_rho) clone frequency distribution over 
+        freq_nbins discrete logarithmically spaced frequences between fmin and 1 of dtype freq_dtype
+        Outputs log probabilities obtained at log frequencies'''
+        fmax=1e0
+        logfvec=np.linspace(np.log10(fmin),np.log10(fmax),freq_nbins)
+        logfvec=np.array(np.log(np.power(10,logfvec)) ,dtype=freq_dtype).flatten()  
+        logrhovec=logfvec*alpha_rho
+        integ=np.exp(logrhovec+logfvec,dtype=freq_dtype)
+        normconst=np.log(np.dot(np.diff(logfvec)/2.,integ[1:]+integ[:-1]))
+        logrhovec-=normconst 
+        return logrhovec,logfvec
 
-    #     '''
-    #     generates power law (power is alpha_rho) clone frequency distribution over 
-    #     freq_nbins discrete logarithmically spaced frequences between fmin and 1 of dtype freq_dtype
-    #     Outputs log probabilities obtained at log frequencies'''
-    #     fmax=1e0
-    #     logfvec=np.linspace(np.log10(fmin),np.log10(fmax),freq_nbins)
-    #     logfvec=np.array(np.log(np.power(10,logfvec)) ,dtype=freq_dtype).flatten()  
-    #     logrhovec=logfvec*alpha_rho
-    #     integ=np.exp(logrhovec+logfvec,dtype=freq_dtype)
-    #     normconst=np.log(np.dot(np.diff(logfvec)/2.,integ[1:]+integ[:-1]))
-    #     logrhovec-=normconst 
-    #     return logrhovec,logfvec
-
-    def get_distsample(self, pmf, Nsamp, dtype='uint32'):
+    def get_distsample(self, pmf,Nsamp,dtype='uint32'):
         '''
         generates Nsamp index samples of dtype (e.g. uint16 handles up to 65535 indices) from discrete probability mass function pmf.
         Handles multi-dimensional domain. N.B. Output is sorted.
@@ -805,7 +1062,7 @@ class Generator:
         return sampled_inds
 
     
-    def gen_synthetic_data_Null(self, paras, noise_model, NreadsI, NreadsII, Nsamp):
+    def gen_synthetic_data_Null(self, paras, noise_model, NreadsI,NreadsII,Nsamp):
         '''
         outputs an array of observed clone frequencies and corresponding dataframe of pair counts
         for a null model learned from a dataset pair with NreadsI and NreadsII number of reads, respectively.
@@ -827,7 +1084,7 @@ class Generator:
             beta_mv= paras[1]
             alpha_mv=paras[2]
     
-        logrhofvec,logfvec,n = ut.get_rhof(alpha, 800, fmin)
+        logrhofvec,logfvec = self.get_rhof(alpha,fmin)
         fvec=np.exp(logfvec)
         dlogf=np.diff(logfvec)/2.
     

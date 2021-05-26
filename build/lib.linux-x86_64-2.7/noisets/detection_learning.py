@@ -78,19 +78,19 @@ def main():
     filename1 = options.filename1 # first biological replicate
     filename2 = options.filename2 # second biological replicate
     if options.give_details:
-        colnames1 = [options.count_label, options.ntCDR3_label] #colnames that will change if you work with a different data-set
-        colnames2 = [options.count_label, options.ntCDR3_label]
+        colnames1 = [options.freq_label, options.count_label, options.ntCDR3_label, options.AACDR3_label] #colnames that will change if you work with a different data-set
+        colnames2 = [options.freq_label, options.count_label, options.ntCDR3_label, options.AACDR3_label]
 
     else:
-        colnames1 = ['Clone count', 'N. Seq. CDR3'] #colnames that will change if you work with a different data-set
-        colnames2 = ['Clone count', 'N. Seq. CDR3'] 
+        colnames1 = ['Clone fraction','Clone count', 'N. Seq. CDR3', 'AA. Seq. CDR3'] #colnames that will change if you work with a different data-set
+        colnames2 = ['Clone fraction','Clone count', 'N. Seq. CDR3', 'AA. Seq. CDR3'] 
 
     # check 
-    cl_S1 = Data_Process(path, filename1, filename2, [colnames1[1], colnames2[1]],  [colnames1[0], colnames2[0]])
+    cl_S1 = Data_Process(path, filename1, filename2, colnames1,  colnames2)
     print("First Filename is : " , cl_S1.filename1)
     print("Second Filename is : ",  cl_S1.filename2)
-    print("Name of count columns are : ", [colnames1[0], colnames2[0]])
-    print("Name of id columns are : ", [colnames1[1], colnames2[1]])
+    print("Name of columns of first file are : ", cl_S1.colnames1)
+    print("Name of columns of second file are : ", cl_S1.colnames2)
 
     df_1 = pd.read_csv(options.nullparastime1, sep ='\t')
     paras_1 = np.array(df_1['value'])
@@ -103,7 +103,7 @@ def main():
 
     # Create dataframe
 
-    df = cl_S1.import_data()
+    n, df = cl_S1.import_data()
 
     if options.Negative_bino_poisson:
         noise_model = 0
@@ -116,14 +116,14 @@ def main():
 
     ## Expansion Model
 
-    expansion = Expansion_Model(df)
+    expansion = Expansion_Model()
     pval_threshold = options.pval 
     smed_threshold = options.smed
 
     outpath = options.detect_filename + filename1 + filename2
 
     expansion.expansion_table(outpath, paras_1, paras_2, df, noise_model, pval_threshold, 
-                              smed_threshold, options.detect_filename+"_expanded.csv")
+                              smed_threshold, "params.txt")
 
 
 if __name__ == '__main__': main()
