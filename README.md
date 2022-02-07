@@ -20,7 +20,13 @@ datasets. NoisET package is desribed [here](<https://arxiv.org/abs/2102.03568>).
 
 Python 3 
 
-To install NoisET, gitclone the file in your working environment. 
+NoisET is a python /3.6 software. It is available on PyPI and can be downloaded and installed through pip:
+
+```console
+$ pip install noisets
+```
+
+To install NoisET and try the tutorial dusplayed in this github: gitclone the file in your working environment. 
 Using the terminal, go to NoisET directory and write the following command : 
 
 ```console
