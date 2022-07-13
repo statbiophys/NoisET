@@ -147,10 +147,9 @@ from noisets import noisettes as ns
 ```
 You can download the Jupyter notebook and modify it with your own PATHTODATA / datafile specificities - visualization tools are also provided.
 
-In the notebook, new function:
 
 
- ## 3/ Detect responding clones:
+ ## 4/ Detect responding clones:
  
 Detects responding clones to a stimulus: NoisET second function (2)
 
