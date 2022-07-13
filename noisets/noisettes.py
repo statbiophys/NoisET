@@ -2172,7 +2172,7 @@ class Generator:
         return f_samples,pair_samples_df
 
 
-    def generate_trajectories(self, tau, theta, method, paras_1, paras_2, t_ime, output_path, filename, NreadsI = '1e6', NreadsII = '1e6'):
+    def generate_trajectories(self, tau, theta, method, paras_1, paras_2, t_ime, filename, NreadsI = '1e6', NreadsII = '1e6'):
 
 
         """
@@ -2246,12 +2246,12 @@ class Generator:
         if method == 'negative_binomial':
 
             df_diffusion_LB  = experimental_sampling_diffusion_NegBin(NreadsI, NreadsII, paras, x_i_LB, x_f_LB, N_cells_day_0_LB, N_cells_day_1_LB)
-            df_diffusion_LB.to_csv(output_path + '/' +  filename + '.csv' , sep= '\t')
+            df_diffusion_LB.to_csv(filename + '.csv' , sep= '\t')
 
         elif method == 'poisson': 
 
             df_diffusion_LB  = experimental_sampling_diffusion_Poisson(NreadsI, NreadsII, x_i_LB, x_f_LB, t, N_cells_day_0_LB, N_cells_day_1_LB)
-            df_diffusion_LB.to_csv(output_path + '/' +  filename + '.csv' , sep= '\t')
+            df_diffusion_LB.to_csv(filename + '.csv' , sep= '\t')
 
 
 
