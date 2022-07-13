@@ -25,6 +25,7 @@ NoisET is a python /3.6 software. It is available on PyPI and can be downloaded 
 ```console
 $ pip install noisets
 ```
+Watch out, Data pre-processing, diversity estimates and generation of neutral TCR clonal dynamics is not possible yet with installation with pip. Use only the sudo command below.
 
 To install NoisET and try the tutorial dusplayed in this github: gitclone the file in your working environment. 
 Using the terminal, go to NoisET directory and write the following command : 
@@ -35,6 +36,10 @@ $ sudo python setup.py install
 
 # Documentation
 
+A tutorial is available at https://github.com/mbensouda/NoisET_tutorial . 
+The python package enables to manipulate longitudinal RepSeq data and find the relevant time points to compare to study TCR repertoire dynamics after an acute stimulus. In the notebook given as an example, we give the analysis published in https://elifesciences.org/articles/63502 (PCA analysis of clonal abundance trajectories) and additional tools to manipulate longitudinal RepSeq data. 
+NoisET - data - preprocessing.ipynb
+
 Three commands are available to use :
 - `noiset-noise` To infer Null noise model: NoisET first function (1)
 - `noiset-nullgenerator` To qualitatively check consistency of NoisET first function
@@ -43,7 +48,11 @@ Three commands are available to use :
 All options are described typing one of the previous commands + `--help`or `-h`. Options are also described in the following READme.
 Notebooks are also available.
 
-## 1/ Infer noise model 
+## 1/ Data pre-processing
+
+The python package enables to manipulate longitudinal RepSeq data and find the relevant time points to compare to study TCR repertoire dynamics after an acute stimulus. In the notebook given as an example, we give the analysis published in https://elifesciences.org/articles/63502 (PCA analysis of clonal abundance trajectories) and additional tools to manipulate longitudinal RepSeq data. 
+Go check : NoisET example - NoisET - data - preprocessing.ipynb
+## 2/ Infer noise model 
 
 ### A/ Command line
 
@@ -96,9 +105,12 @@ from noisets import noisettes as ns
 ```
 You can download the Jupyter notebook and modify it with your own PATHTODATA / datafile specificities.
 
-## 2/ Generate synthetic data for null model learning:
+A diversity estimator can be used from the knowledge of the noise model which has been learnt in a first step: check NoisET example - Null model learning.ipynb, 3/ diversity estimator: "self.diversity_estimate(df, paras, noise_model)".
+
+## 3/ Generate synthetic data for null model learning:
 
 To qualitatively check consistency of NoisET first function (1) with experiments or for other reasons, it can be useful to generates synthetic replicates from the null model (described in Methods section).
+One can also generalte healthy RepSeq samples dynamics using the noise model which has been learnt in a first step anf giving the time-scale dynamics of turnover of the repertoire as defined in https://www.biorxiv.org/content/10.1101/2022.05.01.490247v1. Check NoisET example - Null model learning.ipynb 3/ Generating neutral trajectories to have an example. 
 
 ### A/ Command line
 
@@ -134,6 +146,8 @@ import noisets
 from noisets import noisettes as ns
 ```
 You can download the Jupyter notebook and modify it with your own PATHTODATA / datafile specificities - visualization tools are also provided.
+
+In the notebook, new function:
 
 
  ## 3/ Detect responding clones:
