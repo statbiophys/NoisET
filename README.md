@@ -50,6 +50,23 @@ Notebooks are also available.
 The python package enables to manipulate longitudinal RepSeq data and find the relevant time points to compare to study TCR repertoire dynamics after an acute stimulus. In the notebook given as an example, we give the analysis published in https://elifesciences.org/articles/63502 (PCA analysis of clonal abundance trajectories) and additional tools to manipulate longitudinal RepSeq data. 
 Go check : [here](<https://github.com/statbiophys/NoisET/blob/master/NoisET%20example%20-%20data%20-%20preprocessing.ipynb>).
 
+```python 
+data_pre = ns.longitudinal_analysis(patient, data_folder) 
+clones, times = data_pre.import_clones() # to import all the clonotypes of a given patient and store them in a dictionary. It returns also the list of #ordered time points of the longitudinal dataset. 
+
+top_clones = data_pre.get_top_clones_set(n_top_clones) #to get the n_top_clones TCR nucleotides sequence of patient of interest at every time point.
+
+traj_df = data_pre.build_traj_frame(top_clones) # build a dataframe with abundance trajectories of the n_top_clones TCR of patient of interest at every #time point
+
+pca, clustering = data_pre.PCA_traj(n_top_clones) #to get pca and clustering objects as in the [scikit-learn-PCA](<https://scikit-#learn.org/stable/modules/generated/sklearn.decomposition.PCA.html>) and [scikit-learn-clustering] (<https://scikit-#learn.org/stable/modules/clustering.html>). 
+
+data_pre.plot_clusters2D(n_top_clones, filename) #plot the different clusters (it's possible to modify the number of clusters), and save the figure in #'filename.pdf'
+
+data_pre.plot_traj_clusters(n_top_clones, filename) #plot the TCR abundance trajectoriesfor each cluster to visualize the various dynamics, and save the #figure in 'filename.pdf'
+```
+
+Other methods to manipulate and visualize longitudinalc RepSeq data are provided. 
+
 
 ## 2/ Infer noise model 
 
@@ -104,7 +121,13 @@ from noisets import noisettes as ns
 ```
 You can download the Jupyter notebook and modify it with your own PATHTODATA / datafile specificities.
 
-A diversity estimator can be used from the knowledge of the noise model which has been learnt in a first step: check NoisET example - Null model learning.ipynb, 3/ diversity estimator: "self.diversity_estimate(df, paras, noise_model)".
+A diversity estimator can be used from the knowledge of the noise model which has been learnt in a first step: Go check : [here](<https://github.com/statbiophys/NoisET/blob/master/NoisET%20example%20-%20Null%20model%20learning%20.ipynb>)
+
+```python 
+null_model = ns.Noise_Model()
+Diversity = null_model.diversity_estimate(df, paras, noise_model) #df is a the data-frame (pandas-object) which was used to learn the noise model, paras #are the noise parameters (vector - numpy object) and noise_model is a string, this function will return the diversity estimate from the noise model #inference.
+```
+self.diversity_estimate(df, paras, noise_model)".
 
 ## 3/ Generate synthetic data for null model learning:
 
