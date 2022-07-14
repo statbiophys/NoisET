@@ -120,7 +120,7 @@ to get pca and clustering objects as in the [scikit-learn-PCA](<https://scikit-#
     -------
     scikit learn objects
 
-Other methods to manipulate and visualize longitudinalc RepSeq data are provided.
+Other methods to manipulate and visualize longitudinal RepSeq abundance data are provided.
 
 
 ## 2/ Infer noise model 
