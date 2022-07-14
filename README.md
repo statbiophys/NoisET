@@ -185,17 +185,17 @@ null_model.diversity_estimate()
 Compute the diversity estimate from data and the infered noise model.
     Parameters
     ----------
-df : data-frame 
-    The data-frame which has been used to learn the noise model
-paras : numpy array
-    vector containing the noise parameters
-noise_model : int
-    choice of noise model 
+    df : data-frame 
+        The data-frame which has been used to learn the noise model
+    paras : numpy array
+        vector containing the noise parameters
+    noise_model : int
+        choice of noise model 
 
     Returns
     -------
-float
-    diversity estimate from the noise model inference.
+    float
+        diversity estimate from the noise model inference.
 
 
 
