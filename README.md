@@ -127,7 +127,13 @@ Other methods to manipulate and visualize longitudinal RepSeq abundance data are
 
 ### A/ Command line
 
-To Infer Null noise model: NoisET first function (1), use the command `noiset-noise`
+To infer null noise model: NoisET first function (1), use the command `noiset-noise`
+
+At the command prompt, type:
+```console
+$ noiset-noise --path 'DATA_REPO/' --f1 'FILENAME1_X_REP1' --f2 'FILENAME2_X_REP2' --(noisemodel)
+```
+
 Several options are needed to learn noise model from two replicate samples associated to one individual at a specific time point:
 
 #### 1/ Data information:
@@ -210,10 +216,19 @@ One can also generalte healthy RepSeq samples dynamics using the noise model whi
 
 ### A/ Command line
 
+To generate synthetic TCR RepSeq data replicates having chosen sampling noise characteristics, use the command `noiset-nullgenerator`
+
+ ```console
+ $ noiset-nullgenerator --(noise-model) --nullpara 'NULLPARAS' --NreadsI float --NreadsII float --Nclones float --output 'SYNTHETICDATA'  
+ ```
+
 #### 1/ Choice of noise model:
-- `--NBPoisson`: Negative Binomial + Poisson Noise Model - 5 parameters 
-- `--NB`: Negative Binomial - 4 parameters  
-- `--Poisson`: Poisson - 2 parameters 
+The user must chose one of the three possible models for the probability that a TCR has <strong> an empirical count n </strong> knowing that its  <strong> true frequency is f </strong>, P(n|f): a Poisson distribution `--Poisson`, a negative binomial distribution `--NB`, or a two-step model combining Negative-Binomial and a Poisson distribution `--NBP`. n is the empirical clone size and  depends on the experimental protocol.
+For each P(n|f), a set of parameters is learnt.
+
+- `--NBPoisson`: Negative Binomial + Poisson Noise Model - 5 parameters 5 parameters described in [Puelma Touzel et al, 2020](<https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1007873&rev=2>): power-law exponent of clonotypes frequencies distributions `'alph_rho'`, minimum of clonotype frequencies distribution `'fmin'`, `'beta'` and `'alpha'`, parameters of negative binomial distribution constraining mean and variance of P(m|f) distribution (m being the number of cells associated to a clonotype in the experiemental sample), and `'m_total'` the total number of cells in the sample of interest..
+- `--NB`: Negative Binomial - 4 parameters: power-law of the clonotypes frequencies distributions (same ansatz than in [Puelma Touzel et al, 2020](<https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1007873&rev=2>) `'alph_rho'`, minimum of clonotype frequencies distribution `'fmin'`, `'beta'` and `'alpha'`, parameters of negative binomial distribution constraining mean and variance of P(n|f) distribution. <em> NB(fNreads, fNreads + betafNreads<sup>alpha</sup>) </em>. (Nreads is the total number of reads in the sample of interest.) 
+- `--Poisson`: Poisson - 2 parameters power-law of the clonotypes frequencies distributions (same ansatz than in [Puelma Touzel et al, 2020](<https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1007873&rev=2>)`'alph_rho'` and minimum of clonotype frequencies distribution `'fmin'`. P(n|f) is a Poisson distribution of parameter <em> fNreads </em>. (Nreads is the total number of reads in the sample of interest.)
 
 #### 2/ Specify learnt parameters:
 - `--nullpara 'PATHTOFOLDER/NULLPARAS.txt'`: parameters learnt thanks to NoisET function (1) \
@@ -311,6 +326,14 @@ Detects responding clones to a stimulus: NoisET second function (2)
 
 ### A/ Command line
 
+To detect responding clones from two RepSeq data at time_1 and time_2, use the command `noiset-detection`
+
+```console
+$ noiset-detection --(noisemodel)  --nullpara1 'FILEFORPARAS1' --nullpara2 'FILEFORPARAS1' --path 'REPO/' --f1 'FILENAME_TIME_1' --f2 'FILENAME_TIME_2' --pval float --smedthresh float --output 'DETECTIONDATA' 
+```
+
+Several options are needed to learn noise model from two replicate samples associated to one individual at a specific time point:
+
 #### 1/ Choice of noise model:
 - `--NBPoisson`: Negative Binomial + Poisson Noise Model - 5 parameters 
 - `--NB`: Negative Binomial - 4 parameters  
@@ -390,26 +413,14 @@ To detect expanded clones from longitudinal data-set
     data-frame - csv file
         the output is a csv file of columns : $s_{1-low}$, $s_{2-med}$, $s_{3-high}$, $s_{max}$, $\bar{s}$, $f_1$, $f_2$, $n_1$, $n_2$, 'CDR3_nt', 'CDR3_AA' and '$p$-value' 
 
-You can download a Jupyter notebook and modify it with your own PATHTODATA / datafile specificities - visualization tools are also provided.
-
-# Methods
-
-## Noise Learning (1)
-The user must chose one of the three possible models for the probability that a TCR has <strong> an empirical count n </strong> knowing that its  <strong> true frequency is f </strong>, P(n|f): a Poisson distribution `--Poisson`, a negative binomial distribution `--NB`, or a two-step model combining Negative-Binomial and a Poisson distribution `--NBP`. n is the empirical clone size and  depends on the experimental protocol.
-For each P(n|f), a set of parameters is learnt. 
-
-- For `--NBP`: 5 parameters described in [Puelma Touzel et al, 2020](<https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1007873&rev=2>): power-law exponent of clonotypes frequencies distributions `'alph_rho'`, minimum of clonotype frequencies distribution `'fmin'`, `'beta'` and `'alpha'`, parameters of negative binomial distribution constraining mean and variance of P(m|f) distribution (m being the number of cells associated to a clonotype in the experiemental sample), and `'m_total'` the total number of cells in the sample of interest..
-- for `--NB`: 4 parameters: power-law of the clonotypes frequencies distributions (same ansatz than in [Puelma Touzel et al, 2020](<https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1007873&rev=2>) `'alph_rho'`, minimum of clonotype frequencies distribution `'fmin'`, `'beta'` and `'alpha'`, parameters of negative binomial distribution constraining mean and variance of P(n|f) distribution. <em> NB(fNreads, fNreads + betafNreads<sup>alpha</sup>) </em>. (Nreads is the total number of reads in the sample of interest.)
-- for `--Poisson`: power-law of the clonotypes frequencies distributions (same ansatz than in [Puelma Touzel et al, 2020](<https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1007873&rev=2>)`'alph_rho'` and minimum of clonotype frequencies distribution `'fmin'`.
-P(n|f) is Poisson distribution of parameter <em> fNreads </em>. (Nreads is the total number of reads in the sample of interest.)
-
-## Detection learning (2)
-
 The posterior log-fold change distribution computed after optimizing equation [10](<https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1007873&rev=2>) is used to compute the dynamics of each particular clone population (or frequency). Here we explain what are the different features displayed in ouput file 'detectionQ1_0_F1_.txt.gzQ1_15_F1_.txt.gztop_expanded.csv' (`noiset-detection`example command line).
 
 <img src="methods.png"  />
 
 [Identifying clones](<https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1007873&rev=2>) paragraph of [Puelma Touzel et al, 2020].
+
+
+You can download a Jupyter notebook and modify it with your own PATHTODATA / datafile specificities - visualization tools are also provided.
 
 
 # Contact
