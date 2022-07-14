@@ -52,7 +52,14 @@ Go check : [here](<https://github.com/statbiophys/NoisET/blob/master/NoisET%20ex
 
 ```python 
 data_pre = ns.longitudinal_analysis(patient, data_folder)
-.import_clones() 
+```
+
+This object has the following methods:
+
+```python
+.import_clones()
+```
+
 """ to import all the clonotypes of a given patient and store them in a dictionary. It returns also the list of #ordered time points of the longitudinal dataset.
 
     Parameters
@@ -68,9 +75,56 @@ data_pre = ns.longitudinal_analysis(patient, data_folder)
         a dictionary of data_frames giving all the samples of the patient.
  """
 
-top_clones = data_pre.get_top_clones_set(n_top_clones) #to get the n_top_clones TCR nucleotides sequence of patient of interest at every time point.
+```python
+.get_top_clones_set()
+```
+""" to get the n_top_clones TCR nucleotides sequence of patient of interest at every time point.
 
-traj_df = data_pre.build_traj_frame(top_clones) # build a dataframe with abundance trajectories of the n_top_clones TCR of patient of interest at every #time point
+    Parameters
+    ----------
+    n_top_clones : int
+        the n_top_clones TCR abundance you want to extract from each RepSeq sample
+   
+    Returns
+    -------
+    list of str
+        list of TCR nucleotide sequencesof each RepSeq sample
+ """
+ 
+```python
+ .get_top_clones_set()
+ ```
+""" to get the n_top_clones TCR nucleotides sequence of patient of interest at every time point.
+
+    Parameters
+    ----------
+    n_top_clones : int
+        the n_top_clones TCR abundance you want to extract from each RepSeq sample
+   
+    Returns
+    -------
+    list of str
+        list of TCR nucleotide sequencesof each RepSeq sample
+ """
+
+```python
+.build_traj_frame() 
+```
+""" build a dataframe with abundance trajectories of the n_top_clones TCR of patient of interest at every time point
+
+    Parameters
+    ----------
+    top_clones : list 
+        list of TCR nucleotide sequences you want to build the trajectories dataframe, it is the output of .get_top_clones_set()
+   
+    Returns
+    -------
+    data-frame
+        abundance trajectories of the n_top_clones TCR of patient of interest at every time point
+ """
+```python 
+.PCA_traj()
+```
 
 pca, clustering = data_pre.PCA_traj(n_top_clones) #to get pca and clustering objects as in the [scikit-learn-PCA](<https://scikit-#learn.org/stable/modules/generated/sklearn.decomposition.PCA.html>) and [scikit-learn-clustering] (<https://scikit-#learn.org/stable/modules/clustering.html>). 
 
