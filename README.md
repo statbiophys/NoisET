@@ -201,7 +201,7 @@ Compute the diversity estimate from data and the infered noise model.
 
 
 
-## 3/ Generate synthetic data for null model learning:
+## 3/ Generate synthetic data from null model learning:
 
 To qualitatively check consistency of NoisET first function (1) with experiments or for other reasons, it can be useful to generates synthetic replicates from the null model (described in Methods section).
 One can also generalte healthy RepSeq samples dynamics using the noise model which has been learnt in a first step anf giving the time-scale dynamics of turnover of the repertoire as defined in https://www.biorxiv.org/content/10.1101/2022.05.01.490247v1. Check [here](<https://github.com/statbiophys/NoisET/blob/master/NoisET%20example%20-%20Null%20model%20learning%20.ipynb>).  
