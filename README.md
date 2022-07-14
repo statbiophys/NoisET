@@ -59,8 +59,7 @@ This object has the following methods:
 ```python
 .import_clones()
 ```
-
-""" to import all the clonotypes of a given patient and store them in a dictionary. It returns also the list of #ordered time points of the longitudinal dataset.
+to import all the clonotypes of a given patient and store them in a dictionary. It returns also the list of #ordered time points of the longitudinal dataset.
 
     Parameters
     ----------
@@ -73,12 +72,14 @@ This object has the following methods:
     -------
     dictionary
         a dictionary of data_frames giving all the samples of the patient.
- """
+       
+    numpy vector
+        a vector containing all the RepSeq sampling times ordered.
 
 ```python
 .get_top_clones_set()
 ```
-""" to get the n_top_clones TCR nucleotides sequence of patient of interest at every time point.
+to get the n_top_clones TCR nucleotides sequence of patient of interest at every time point.
 
     Parameters
     ----------
@@ -89,28 +90,11 @@ This object has the following methods:
     -------
     list of str
         list of TCR nucleotide sequencesof each RepSeq sample
- """
- 
-```python
- .get_top_clones_set()
- ```
-""" to get the n_top_clones TCR nucleotides sequence of patient of interest at every time point.
-
-    Parameters
-    ----------
-    n_top_clones : int
-        the n_top_clones TCR abundance you want to extract from each RepSeq sample
-   
-    Returns
-    -------
-    list of str
-        list of TCR nucleotide sequencesof each RepSeq sample
- """
 
 ```python
 .build_traj_frame() 
 ```
-""" build a dataframe with abundance trajectories of the n_top_clones TCR of patient of interest at every time point
+build a dataframe with abundance trajectories of the n_top_clones TCR of patient of interest at every time point
 
     Parameters
     ----------
@@ -121,19 +105,22 @@ This object has the following methods:
     -------
     data-frame
         abundance trajectories of the n_top_clones TCR of patient of interest at every time point
- """
+
 ```python 
 .PCA_traj()
 ```
+to get pca and clustering objects as in the [scikit-learn-PCA](<https://scikit-#learn.org/stable/modules/generated/sklearn.decomposition.PCA.html>) and [scikit-learn-clustering] (<https://scikit-#learn.org/stable/modules/clustering.html>). 
 
-pca, clustering = data_pre.PCA_traj(n_top_clones) #to get pca and clustering objects as in the [scikit-learn-PCA](<https://scikit-#learn.org/stable/modules/generated/sklearn.decomposition.PCA.html>) and [scikit-learn-clustering] (<https://scikit-#learn.org/stable/modules/clustering.html>). 
+    Parameters
+    ----------
+    n_top_clones : int
+        the n_top_clones TCR abundance you want to extract from each RepSeq sample
+   
+    Returns
+    -------
+    scikit learn objects
 
-data_pre.plot_clusters2D(n_top_clones, filename) #plot the different clusters (it's possible to modify the number of clusters), and save the figure in #'filename.pdf'
-
-data_pre.plot_traj_clusters(n_top_clones, filename) #plot the TCR abundance trajectoriesfor each cluster to visualize the various dynamics, and save the #figure in 'filename.pdf'
-```
-
-Other methods to manipulate and visualize longitudinalc RepSeq data are provided. 
+Other methods to manipulate and visualize longitudinalc RepSeq data are provided.
 
 
 ## 2/ Infer noise model 
@@ -193,9 +180,24 @@ A diversity estimator can be used from the knowledge of the noise model which ha
 
 ```python 
 null_model = ns.Noise_Model()
-Diversity = null_model.diversity_estimate(df, paras, noise_model) #df is a the data-frame (pandas-object) which was used to learn the noise model, paras #are the noise parameters (vector - numpy object) and noise_model is a string, this function will return the diversity estimate from the noise model #inference.
+null_model.diversity_estimate()
 ```
-self.diversity_estimate(df, paras, noise_model)".
+Compute the diversity estimate from data and the infered noise model.
+Parameters
+----------
+df : data-frame 
+    The data-frame which has been used to learn the noise model
+paras : numpy array
+    vector containing the noise parameters
+noise_model : int
+    choice of noise model 
+
+Returns
+-------
+float
+    diversity estimate from the noise model inference.
+
+
 
 ## 3/ Generate synthetic data for null model learning:
 
@@ -236,23 +238,35 @@ import noisets
 from noisets import noisettes as ns
 ```
 You can download the Jupyter notebook and modify it with your own PATHTODATA / datafile specificities - visualization tools are also provided.
-To generate synthetic neutral dynamics of TCR RepSeq data: 
+ 
 
 ```python 
 cl_neutral_dyn = ns.Generator()
-paras = [ -2.05458585,   0.44229634,   1.09391748, -10.19919861] #parameters of the noise model that has been learnt
-method = 'negative_binomial' # noise model
-tau = 4 # first time-scale parameter of the dynamics
-theta = 7 # second time-scale parameter of the dynamics
-t_ime = 1 # number of years between both synthetic sampling (between time_1 and time_2)
-filename = 'test_neutral' #name of the file in which the dataframe is stored 
-
-paras_1 = paras #noise model parameters at time_1
-paras_2 = paras #noise model parameters at time_2
-
-cl_neutral_dyn.generate_trajectories(tau, theta, method, paras_1, paras_2, t_ime, filename) #the output is a csv file of columns : 'Clone_count_1' (at time_1) 'Clone_count_2' (at time_2) and the frequency counterparts 'Clone_frequency_1' and 'Clone_frequency_2'.
 ```
+To generate synthetic neutral dynamics of TCR RepSeq data.
 
+    Parameters
+    ----------
+    paras_1  : numpy array
+        parameters of the noise model that has been learnt at time_1
+    paras_2  : numpy array
+        parameters of the noise model that has been learnt at time_2
+    method   : str
+    'negative_binomial' or 'poisson'
+    tau      : float
+    first time-scale parameter of the dynamics
+    theta    : float
+    second time-scale parameter of the dynamics
+    t_ime    : float
+    number of years between both synthetic sampling (between time_1 and time_2)
+    filename : str
+    name of the file in which the dataframe is stored  
+    
+   
+    Returns
+    -------
+    data-frame - csv file
+        the output is a csv file of columns : 'Clone_count_1' (at time_1) 'Clone_count_2' (at time_2) and the frequency counterparts 'Clone_frequency_1'                and 'Clone_frequency_2'
 
 
  ## 4/ Detect responding clones:
