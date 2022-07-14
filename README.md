@@ -183,6 +183,8 @@ null_model = ns.Noise_Model()
 null_model.diversity_estimate()
 ```
 Compute the diversity estimate from data and the infered noise model.
+    
+    
     Parameters
     ----------
     df : data-frame 
