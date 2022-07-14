@@ -109,7 +109,7 @@ build a dataframe with abundance trajectories of the n_top_clones TCR of patient
 ```python 
 .PCA_traj()
 ```
-to get pca and clustering objects as in the [scikit-learn-PCA](<https://scikit-#learn.org/stable/modules/generated/sklearn.decomposition.PCA.html>) and [scikit-learn-clustering] (<https://scikit-#learn.org/stable/modules/clustering.html>). 
+to get pca and clustering objects as in the [scikit-learn-PCA](<https://scikit-#learn.org/stable/modules/generated/sklearn.decomposition.PCA.html>) and [scikit-learn-clustering](<https://scikit-#learn.org/stable/modules/clustering.html>). 
 
     Parameters
     ----------
