@@ -183,8 +183,7 @@ paras_1 = paras #noise model parameters at time_1
 paras_2 = paras #noise model parameters at time_2
 
 cl_neutral_dyn.generate_trajectories(tau, theta, method, paras_1, paras_2, t_ime, filename) #the output is a csv file of columns : 'Clone_count_1' (at time_1) 'Clone_count_2' (at time_2) and the frequency counterparts 'Clone_frequency_1' and 'Clone_frequency_2'.
-
-``
+```
 
 
 
