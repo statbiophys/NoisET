@@ -37,9 +37,6 @@ $ sudo python setup.py install
 # Documentation
 
 A tutorial is available at https://github.com/mbensouda/NoisET_tutorial . 
-The python package enables to manipulate longitudinal RepSeq data and find the relevant time points to compare to study TCR repertoire dynamics after an acute stimulus. In the notebook given as an example, we give the analysis published in https://elifesciences.org/articles/63502 (PCA analysis of clonal abundance trajectories) and additional tools to manipulate longitudinal RepSeq data. 
-NoisET - data - preprocessing.ipynb
-
 Three commands are available to use :
 - `noiset-noise` To infer Null noise model: NoisET first function (1)
 - `noiset-nullgenerator` To qualitatively check consistency of NoisET first function
@@ -51,7 +48,7 @@ Notebooks are also available.
 ## 1/ Data pre-processing
 
 The python package enables to manipulate longitudinal RepSeq data and find the relevant time points to compare to study TCR repertoire dynamics after an acute stimulus. In the notebook given as an example, we give the analysis published in https://elifesciences.org/articles/63502 (PCA analysis of clonal abundance trajectories) and additional tools to manipulate longitudinal RepSeq data. 
-Go check : NoisET example - NoisET - data - preprocessing.ipynb
+Go check : [here] <https://github.com/statbiophys/NoisET/blob/master/NoisET%20example%20-%20Detection%20of%20responding%20clones.ipynb> 
 ## 2/ Infer noise model 
 
 ### A/ Command line
