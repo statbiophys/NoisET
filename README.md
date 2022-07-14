@@ -132,7 +132,7 @@ self.diversity_estimate(df, paras, noise_model)".
 ## 3/ Generate synthetic data for null model learning:
 
 To qualitatively check consistency of NoisET first function (1) with experiments or for other reasons, it can be useful to generates synthetic replicates from the null model (described in Methods section).
-One can also generalte healthy RepSeq samples dynamics using the noise model which has been learnt in a first step anf giving the time-scale dynamics of turnover of the repertoire as defined in https://www.biorxiv.org/content/10.1101/2022.05.01.490247v1. Check NoisET example - Null model learning.ipynb 3/ Generating neutral trajectories to have an example. 
+One can also generalte healthy RepSeq samples dynamics using the noise model which has been learnt in a first step anf giving the time-scale dynamics of turnover of the repertoire as defined in https://www.biorxiv.org/content/10.1101/2022.05.01.490247v1. Check [here](<https://github.com/statbiophys/NoisET/blob/master/NoisET%20example%20-%20Null%20model%20learning%20.ipynb>).  
 
 ### A/ Command line
 
@@ -168,6 +168,23 @@ import noisets
 from noisets import noisettes as ns
 ```
 You can download the Jupyter notebook and modify it with your own PATHTODATA / datafile specificities - visualization tools are also provided.
+To generate synthetic neutral dynamics of TCR RepSeq data: 
+
+```python 
+cl_neutral_dyn = ns.Generator()
+paras = [ -2.05458585,   0.44229634,   1.09391748, -10.19919861] #parameters of the noise model that has been learnt
+method = 'negative_binomial' # noise model
+tau = 4 # first time-scale parameter of the dynamics
+theta = 7 # second time-scale parameter of the dynamics
+t_ime = 1 # number of years between both synthetic sampling (between time_1 and time_2)
+filename = 'test_neutral' #name of the file in which the dataframe is stored 
+
+paras_1 = paras #noise model parameters at time_1
+paras_2 = paras #noise model parameters at time_2
+
+cl_neutral_dyn.generate_trajectories(tau, theta, method, paras_1, paras_2, t_ime, filename) #the output is a csv file of columns : 'Clone_count_1' (at time_1) 'Clone_count_2' (at time_2) and the frequency counterparts 'Clone_frequency_1' and 'Clone_frequency_2'.
+
+``
 
 
 
