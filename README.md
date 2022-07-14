@@ -57,7 +57,7 @@ data_pre = ns.longitudinal_analysis(patient, data_folder)
 This object has the following methods:
 
 ```python
-.import_clones()
+.import_clones(args)
 ```
 to import all the clonotypes of a given patient and store them in a dictionary. It returns also the list of #ordered time points of the longitudinal dataset.
 
@@ -77,7 +77,7 @@ to import all the clonotypes of a given patient and store them in a dictionary. 
         a vector containing all the RepSeq sampling times ordered.
 
 ```python
-.get_top_clones_set()
+.get_top_clones_set(args)
 ```
 to get the n_top_clones TCR nucleotides sequence of patient of interest at every time point.
 
@@ -92,7 +92,7 @@ to get the n_top_clones TCR nucleotides sequence of patient of interest at every
         list of TCR nucleotide sequencesof each RepSeq sample
 
 ```python
-.build_traj_frame() 
+.build_traj_frame(args) 
 ```
 build a dataframe with abundance trajectories of the n_top_clones TCR of patient of interest at every time point
 
@@ -107,7 +107,7 @@ build a dataframe with abundance trajectories of the n_top_clones TCR of patient
         abundance trajectories of the n_top_clones TCR of patient of interest at every time point
 
 ```python 
-.PCA_traj()
+.PCA_traj(args)
 ```
 to get pca and clustering objects as in the [scikit-learn-PCA](<https://scikit-#learn.org/stable/modules/generated/sklearn.decomposition.PCA.html>) and [scikit-learn-clustering](<https://scikit-#learn.org/stable/modules/clustering.html>). 
 
@@ -182,7 +182,7 @@ A diversity estimator can be used from the knowledge of the noise model which ha
 
 ```python 
 null_model = ns.Noise_Model()
-null_model.diversity_estimate()
+null_model.diversity_estimate(args)
 ```
 Compute the diversity estimate from data and the infered noise model.
     
@@ -242,11 +242,43 @@ import noisets
 from noisets import noisettes as ns
 ```
 You can download the Jupyter notebook and modify it with your own PATHTODATA / datafile specificities - visualization tools are also provided.
+
+```python 
+cl_rep_gen_gDNA = ns.Generator()
+```
+To generate synthetic TCR RepSeq data replicates having chosen sampling noise characteristics.
+
+```python 
+cl_rep_gen_gDNA.gen_synthetic_data_Null(args)
+```
+
+    Parameters
+    ----------
+    paras  : numpy array
+        parameters of the noise model 
+    noise_model : int
+        choice of noise model 0: Poisson, 1: negative Binomial, 2: negative Binomial + Poisson 
+    NreadsI      : float
+    total number  of reads in first replicate
+    NreadsII     : float
+    total number  of reads in second replicate
+    Nsamp    : float
+    total number of clones in union of two replicates 
+ 
+    Returns
+    -------
+    data-frame - csv file
+        the output is a csv file of columns : 'Clone_count_1' (first replicate) 'Clone_count_2' (second replicate) and the frequency counterparts 'Clone_fraction_1', and 'Clone_fraction_2'
+ 
  
 
 ```python 
 cl_neutral_dyn = ns.Generator()
 ```
+```python 
+cl_neutral_dyn.generate_trajectories(args)
+```
+
 To generate synthetic neutral dynamics of TCR RepSeq data.
 
     Parameters
@@ -327,7 +359,37 @@ For Python users, it is possible to use NoisET as a package importing it as ment
 ```python 
 import noisets
 from noisets import noisettes as ns
+
+expansion = ns.Expansion_Model()
+expansion.expansion_table(args)
 ```
+To detect expanded clones from longitudinal data-set
+
+    Parameters
+    ----------
+    outpath  : str
+        Name of the directory where to store the output table
+    paras_1  : numpy array
+        parameters of the noise model that has been learnt at time_1
+    paras_2  : numpy array
+        parameters of the noise model that has been learnt at time_2
+    df       : pandas dataframe 
+        pandas dataframe merging the two RepSeq data at time_1 and time_2
+    
+    noise_model : int
+        choice of noise model 0: Poisson, 1: negative Binomial, 2: negative Binomial + Poisson  
+    
+    pval_threshold : float
+        P-value threshold to detect and discriminate if a TCR clone has expanded 
+    
+    smed_threshold : float
+        median of the log-fold change threshold to detect if a TCR clone has expanded 
+   
+    Returns
+    -------
+    data-frame - csv file
+        the output is a csv file of columns : $s_{1-low}$, $s_{2-med}$, $s_{3-high}$, $s_{max}$, $\bar{s}$, $f_1$, $f_2$, $n_1$, $n_2$, 'CDR3_nt', 'CDR3_AA' and '$p$-value' 
+
 You can download a Jupyter notebook and modify it with your own PATHTODATA / datafile specificities - visualization tools are also provided.
 
 # Methods
