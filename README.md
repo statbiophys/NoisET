@@ -51,8 +51,22 @@ The python package enables to manipulate longitudinal RepSeq data and find the r
 Go check : [here](<https://github.com/statbiophys/NoisET/blob/master/NoisET%20example%20-%20data%20-%20preprocessing.ipynb>).
 
 ```python 
-data_pre = ns.longitudinal_analysis(patient, data_folder) 
-clones, times = data_pre.import_clones() # to import all the clonotypes of a given patient and store them in a dictionary. It returns also the list of #ordered time points of the longitudinal dataset. 
+data_pre = ns.longitudinal_analysis(patient, data_folder)
+.import_clones() 
+""" to import all the clonotypes of a given patient and store them in a dictionary. It returns also the list of #ordered time points of the longitudinal dataset.
+
+    Parameters
+    ----------
+    patient : str
+        The ID of the patient
+    data_folder : str
+        The name of the folder to find data
+
+    Returns
+    -------
+    dictionary
+        a dictionary of data_frames giving all the samples of the patient.
+ """
 
 top_clones = data_pre.get_top_clones_set(n_top_clones) #to get the n_top_clones TCR nucleotides sequence of patient of interest at every time point.
 
