@@ -176,6 +176,8 @@ from noisets import noisettes as ns
 ```
 You can download the Jupyter notebook and modify it with your own PATHTODATA / datafile specificities.
 
+## 3/ Generate synthetic data from null model learning:
+
 A diversity estimator can be used from the knowledge of the noise model which has been learnt in a first step: Go check : [here](<https://github.com/statbiophys/NoisET/blob/master/NoisET%20example%20-%20Null%20model%20learning%20.ipynb>)
 
 ```python 
@@ -201,7 +203,7 @@ Compute the diversity estimate from data and the infered noise model.
 
 
 
-## 3/ Generate synthetic data from null model learning:
+## 4/ Generate synthetic data from null model learning:
 
 To qualitatively check consistency of NoisET first function (1) with experiments or for other reasons, it can be useful to generates synthetic replicates from the null model (described in Methods section).
 One can also generalte healthy RepSeq samples dynamics using the noise model which has been learnt in a first step anf giving the time-scale dynamics of turnover of the repertoire as defined in https://www.biorxiv.org/content/10.1101/2022.05.01.490247v1. Check [here](<https://github.com/statbiophys/NoisET/blob/master/NoisET%20example%20-%20Null%20model%20learning%20.ipynb>).  
@@ -271,7 +273,7 @@ To generate synthetic neutral dynamics of TCR RepSeq data.
         the output is a csv file of columns : 'Clone_count_1' (at time_1) 'Clone_count_2' (at time_2) and the frequency counterparts 'Clone_frequency_1'                and 'Clone_frequency_2'
 
 
- ## 4/ Detect responding clones:
+ ## 5/ Detect responding clones:
  
 Detects responding clones to a stimulus: NoisET second function (2)
 
