@@ -310,7 +310,7 @@ If your TCR CDR3 clonal populations features (ie clonal fractions, clonal counts
 - `--pval XXX` : p-value threshold for the expansion/contraction - use 0.05 as a default value. 
 - `--smedthresh XXX` : log fold change median threshold for the expansion/contraction - use 0 as a default value. 
 
-### 5/ Output file
+#### 5/ Output file
 `--output 'DETECTIONDATA'`: name of the output file (.csv) where you can find a list of the putative responding clones with statistics features. (More details in Methods section).
 
 
