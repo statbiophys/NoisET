@@ -176,7 +176,7 @@ from noisets import noisettes as ns
 ```
 You can download the Jupyter notebook and modify it with your own PATHTODATA / datafile specificities.
 
-## 3/ Generate synthetic data from null model learning:
+## 3/ Diversity estimator:
 
 A diversity estimator can be used from the knowledge of the noise model which has been learnt in a first step: Go check : [here](<https://github.com/statbiophys/NoisET/blob/master/NoisET%20example%20-%20Null%20model%20learning%20.ipynb>)
 
