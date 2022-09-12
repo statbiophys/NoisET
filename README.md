@@ -34,7 +34,7 @@ Using the terminal, go to NoisET directory and write the following command :
 $ sudo python setup.py install
 ```
 
-If you do not have the following python libraries (that are useful to use NoisET) : numpy, pandas, matplotlib, seaborn, scipy, scikit-learn, please do the following commands :
+If you do not have the following python libraries (that are useful to use NoisET) : numpy, pandas, matplotlib, seaborn, scipy, scikit-learn, please do the following commands, to try first to install the dependencies separately: :
  ```
 python -m pip install -U pip
 python -m pip install -U matplotlib
