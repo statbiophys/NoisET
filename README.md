@@ -16,6 +16,8 @@ datasets. NoisET package is desribed [here](<https://arxiv.org/abs/2102.03568>).
 
 ----------------------------------------------------------------------------------------------------------------------------
 
+Extensive documentation can be found [here](<https://mbensouda.github.io/NoisET_documentation/noisets/noisettes.html>).
+
 # Installation
 
 Python 3 
