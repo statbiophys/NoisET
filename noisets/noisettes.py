@@ -1,6 +1,19 @@
 """
+# NoisET<sup>*</sup>  NOIse sampling learning & Expansion detection of T-cell receptors using Bayesian inference.
+
+High-throughput sequencing of T- and B-cell receptors makes it possible to track immune
+repertoires across time, in different tissues, in acute and chronic diseases or in healthy individuals. However
+quantitative comparison between repertoires is confounded by variability in the read count of each receptor
+clonotype due to sampling, library preparation, and expression noise. We present an easy-to-use python
+package NoisET that implements and generalizes a previously developed Bayesian method in [Puelma Touzel et al, 2020](<https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1007873&rev=2>). It can be used
+to learn experimental noise models for repertoire sequencing from replicates, and to detect responding
+clones following a stimulus. The package was tested on different repertoire sequencing technologies and
+datasets. NoisET package is desribed [here](<https://arxiv.org/abs/2102.03568>). 
+
+<sup>* NoisET should be pronounced as "noisettes" (ie hazelnuts in French).</sup>
+
 Functions library for NoisET - construction of noisettes package
-Copyright (C) 2021 Meriem Bensouda Koraichi
+Copyright (C) 2021 Meriem Bensouda Koraichi. 
    This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
@@ -11,6 +24,188 @@ Copyright (C) 2021 Meriem Bensouda Koraichi
     GNU General Public License for more details.
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+# Installation
+
+Python 3 
+
+NoisET is a python /3.6 software. It is available on PyPI and can be downloaded and installed through pip:
+
+```console
+$ pip install noisets
+```
+Watch out, Data pre-processing, diversity estimates and generation of neutral TCR clonal dynamics is not possible yet with installation with pip. Use only the sudo command below.
+
+To install NoisET and try the tutorial dusplayed in this github: gitclone the file in your working environment. 
+Using the terminal, go to NoisET directory and write the following command : 
+
+```console
+$ sudo python setup.py install
+```
+
+If you do not have the following python libraries (that are useful to use NoisET) : numpy, pandas, matplotlib, seaborn, scipy, scikit-learn, please do the following commands, to try first to install the dependencies separately: :
+ ```
+python -m pip install -U pip
+python -m pip install -U matplotlib
+pip install numpy
+pip install pandas
+pip install matplotlib
+pip install seaborn
+pip install -U scikit-learn
+
+ ```
+# Documentation
+
+## Command lines with terminal
+
+A tutorial is available at https://github.com/mbensouda/NoisET_tutorial . 
+Three commands are available to use :
+- `noiset-noise` To infer Null noise model: NoisET first function (1)
+- `noiset-nullgenerator` To qualitatively check consistency of NoisET first function
+- `noiset-detection` To detect responding clones to a stimulus: NoisET second function (2)
+
+All options are described typing one of the previous commands + `--help`or `-h`. Options are also described in the following READme.
+
+## 1/ Infer noise model 
+
+To infer null noise model: NoisET first function (1), use the command `noiset-noise`
+
+At the command prompt, type:
+```console
+$ noiset-noise --path 'DATA_REPO/' --f1 'FILENAME1_X_REP1' --f2 'FILENAME2_X_REP2' --(noisemodel)
+```
+
+Several options are needed to learn noise model from two replicate samples associated to one individual at a specific time point:
+
+#### 1/ Data information:
+
+- `--path 'PATHTODATA'`: set path to data file 
+- `--f1 'FILENAME1_X_REP1'`: filename for individual X replicate 1 
+- `--f2 'FILENAME2_X_REP2'`: filename for individual X replicate 2 
+
+If your TCR CDR3 clonal populations features (ie clonal fractions, clonal counts, clonal nucleotide CDR3 sequences and clonal amino acid sequences) have different column names than: ('Clone fraction', 'Clone count', 'N. Seq. CDR3', 'AA. Seq. CDR3), you can specify the name directly by using: 
+
+- `--specify` 
+- `--freq 'frequency'` : Column label associated to clonal fraction 
+- `--counts 'counts'`:  Column label associated to clonal count  
+- `--ntCDR3 'ntCDR3'`:  Column label associated to clonal CDR3 nucleotides sequence  
+- `--AACDR3 'AACDR3'`:  Column label associated to clonal CDR3 amino acid sequence
+
+#### 2/ Choice of noise model: (parameters meaning described in Methods section)
+- `--NBPoisson`: Negative Binomial + Poisson Noise Model - 5 parameters 
+- `--NB`: Negative Binomial - 4 parameters  
+- `--Poisson`: Poisson - 2 parameters 
+
+#### 3/ Example:
+At the command prompt, type:
+```console
+$ noiset-noise --path 'data_examples/' --f1 'Q1_0_F1_.txt.gz' --f2 'Q1_0_F2_.txt.gz' --NB
+```
+This command line will learn four parameters associated to negative binomial null noise Model `--NB` for individual Q1 at day 0.
+A '.txt' file is created in the working directory: it is a 5/4/2 parameters data-set regarding on NBP/NB/Poisson noise model. In this example, it is a four parameters table (already created in data_examples repository). 
+You can run previous examples using data (Q1 day 0/ day15) provided in the data_examples folder - data from [Precise tracking of vaccine-responding T cell clones reveals convergent and personalized response in identical twins, Pogorelyy et al, PNAS](https://www.pnas.org/content/115/50/12704) 
+
+#### 4/ Example with `--specify`:
+
+At the command prompt, type:
+```console
+$ noiset-noise --path 'data_examples/' --f1 'replicate_1_1.tsv.gz' --f2 'replicate_1_2.tsv.gz' --specify --freq 'frequencyCount' --counts 'count' --ntCDR3 'nucleotide' --AACDR3 'aminoAcid' --NB
+```
+As previously this command enables us to learn four parameters associated to negative binomial null noise model `--NB` for one individual in cohort produced in [Model to improve specificity for identification of clinically-relevant expanded T cells in peripheral blood, Rytlewski et al, PLOS ONE](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0213684). 
+
+## 2/ Generate synthetic data from null model learning:
+
+To qualitatively check consistency of NoisET first function (1) with experiments or for other reasons, it can be useful to generates synthetic replicates from the null model (described in Methods section).
+One can also generalte healthy RepSeq samples dynamics using the noise model which has been learned in a first step anf giving the time-scale dynamics of turnover of the repertoire as defined in https://www.biorxiv.org/content/10.1101/2022.05.01.490247v1. Check [here](<https://github.com/statbiophys/NoisET/blob/master/NoisET%20example%20-%20Null%20model%20learning%20.ipynb>).  
+
+To generate synthetic TCR RepSeq data replicates having chosen sampling noise characteristics, use the command `noiset-nullgenerator`
+
+ ```console
+ $ noiset-nullgenerator --(noise-model) --nullpara 'NULLPARAS' --NreadsI float --NreadsII float --Nclones float --output 'SYNTHETICDATA'  
+ ```
+
+#### 1/ Choice of noise model:
+The user must chose one of the three possible models for the probability that a TCR has <strong> an empirical count n </strong> knowing that its  <strong> true frequency is f </strong>, P(n|f): a Poisson distribution `--Poisson`, a negative binomial distribution `--NB`, or a two-step model combining Negative-Binomial and a Poisson distribution `--NBP`. n is the empirical clone size and  depends on the experimental protocol.
+For each P(n|f), a set of parameters is learned.
+
+- `--NBPoisson`: Negative Binomial + Poisson Noise Model - 5 parameters 5 parameters described in [Puelma Touzel et al, 2020](<https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1007873&rev=2>): power-law exponent of clonotypes frequencies distributions `'alph_rho'`, minimum of clonotype frequencies distribution `'fmin'`, `'beta'` and `'alpha'`, parameters of negative binomial distribution constraining mean and variance of P(m|f) distribution (m being the number of cells associated to a clonotype in the experiemental sample), and `'m_total'` the total number of cells in the sample of interest..
+- `--NB`: Negative Binomial - 4 parameters: power-law of the clonotypes frequencies distributions (same ansatz than in [Puelma Touzel et al, 2020](<https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1007873&rev=2>) `'alph_rho'`, minimum of clonotype frequencies distribution `'fmin'`, `'beta'` and `'alpha'`, parameters of negative binomial distribution constraining mean and variance of P(n|f) distribution. <em> NB(fNreads, fNreads + betafNreads<sup>alpha</sup>) </em>. (Nreads is the total number of reads in the sample of interest.) 
+- `--Poisson`: Poisson - 2 parameters power-law of the clonotypes frequencies distributions (same ansatz than in [Puelma Touzel et al, 2020](<https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1007873&rev=2>)`'alph_rho'` and minimum of clonotype frequencies distribution `'fmin'`. P(n|f) is a Poisson distribution of parameter <em> fNreads </em>. (Nreads is the total number of reads in the sample of interest.)
+
+#### 2/ Specify learned noise parameters:
+- `--nullpara 'PATHTOFOLDER/NULLPARAS.txt'`: parameters learned thanks to NoisET function (1) \
+!!! Make sure to match correctly the noise model and the null parameter file content : 5 parameters for `--NBP`, 4 parameters for `--NB`and 2 parameters
+for `--Poisson`. 
+
+#### 3/ Sequencing properties of data:
+- `--NreadsI NNNN`: total number  of reads in first replicate - it should match the actual data. In the example below, it is the sum of 'Clone count' in 'Q1_0_F1_.txt.gz'. 
+- `--Nreads2 NNNN`: total number  of reads in second replicate - it should match the actual data. In the example below, it is the sum of 'Clone count' in 'Q1_0_F2_.txt.gz'. 
+- `--Nclones NNNN`: total number of clones in union of two replicates - it should match the actual data. In the example below, it is the number of clones present in both replicates : 'Q1_0_F1_.txt.gz' and 'Q1_0_F2_.txt.gz'.
+
+#### 4/ Output file
+`--output 'SYNTHETICDATA'`: name of the output file where you can find the synthetic data set. 
+
+At the command prompt, type 
+ ```console
+ $ noiset-nullgenerator --NB --nullpara 'data_examples/nullpara1.txt' --NreadsI 829578 --NreadsII 954389 --Nclones 776247 --output 'test'  
+ ```
+ Running this line, you create a 'synthetic_test.csv' file with four columns : 'Clone_count_1', 'Clone_count_2', 'Clone_fraction_1', 'Clone_fraction_2', resctively synthetic read counts and frequencies that you would have found in an experimental sample of same learned parameters 'nullpara1.txt', 'NreadsI', 'NreadsII' and 'Nclones'.
+
+## 3/ Detect responding clones:
+ 
+Detects responding clones to a stimulus: NoisET second function (2)
+
+To detect responding clones from two RepSeq data at time_1 and time_2, use the command `noiset-detection`
+
+```console
+$ noiset-detection --(noisemodel)  --nullpara1 'FILEFORPARAS1' --nullpara2 'FILEFORPARAS1' --path 'REPO/' --f1 'FILENAME_TIME_1' --f2 'FILENAME_TIME_2' --pval float --smedthresh float --output 'DETECTIONDATA' 
+```
+Several options are needed to learn noise model from two replicate samples associated to one individual at a specific time point:
+
+#### 1/ Choice of noise model:
+- `--NBPoisson`: Negative Binomial + Poisson Noise Model - 5 parameters 
+- `--NB`: Negative Binomial - 4 parameters  
+- `--Poisson`: Poisson - 2 parameters 
+
+#### 2/ Specify learned parameters for both time points:
+(they can be the same for both time points if replicates are not available but to use carefully as mentioned in [ARTICLE]) 
+- `--nullpara1 'PATH/FOLDER/NULLPARAS1.txt'`: parameters learned thanks to NoisET function (1) for time 1 
+- `--nullpara2 'PATH/FOLDER/NULLPARAS2.txt'`: parameters learned thanks to NoisET function (1) for time 2  
+
+!!! Make sure to match correctly the noise model and the null parameters file content : 5 parameters for `--NBP`, 4 parameters for `--NB`and 2 parameters
+for `--Poisson`. 
+
+#### 3/ Data information:
+
+- `--path 'PATHTODATA'`: set path to data file 
+- `--f1 'FILENAME1_X_time1'`: filename for individual X time 1 
+- `--f2 'FILENAME2_X_time2'`: filename for individual X time 2 
+
+If your TCR CDR3 clonal populations features (ie clonal fractions, clonal counts, clonal nucleotides CDR3 sequences and clonal amino acids sequences) have different column names than: ('Clone fraction', 'Clone count', 'N. Seq. CDR3', 'AA. Seq. CDR3), you can specify the name by using: 
+
+- `--specify` 
+- `--freq 'frequency'` : Column label associated to clonal fraction 
+- `--counts 'counts'`:  Column label associated to clonal count  
+- `--ntCDR3 'ntCDR3'`:  Column label associated to clonal CDR3 nucleotides sequence  
+- `--AACDR3 'AACDR3'`:  Column label associated to clonal CDR3 amino acid sequence
+
+#### 4/ Detection thresholds: (More details in Methods section).
+- `--pval XXX` : p-value threshold for the expansion/contraction - use 0.05 as a default value. 
+- `--smedthresh XXX` : log fold change median threshold for the expansion/contraction - use 0 as a default value. 
+
+#### 5/ Output file
+`--output 'DETECTIONDATA'`: name of the output file (.csv) where you can find a list of the putative responding clones with statistics features. (More details in Methods section).
+
+
+At the command prompt, type 
+```console
+$ noiset-detection --NB  --nullpara1 'data_examples/nullpara1.txt' --nullpara2 'data_examples/nullpara1.txt' --path 'data_examples/' --f1 'Q1_0_F1_.txt.gz' --f2 'Q1_15_F1_.txt.gz' --pval 0.05 --smedthresh 0 --output 'detection' 
+```
+
+Ouput: table containing all putative detected clones with statistics features about logfold-change variable <em> s </em>: more theoretical description [Puelma Touzel et al, 2020](<https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1007873&rev=2>).
+
+## Python package
+
 """
 
 
@@ -39,17 +234,21 @@ from sklearn.decomposition import PCA
 from sklearn.cluster import AgglomerativeClustering
 
 #tools to generate RepSeq traj
-
 import shutil
 from multiprocessing import Pool, cpu_count
 from functools import partial
 
-
-# Library functions to generate TCR repertoires
-##===================================Initial-Distributions==========================================
-def rho_counts_theo_minus_x(A, B, N_0):
+###===================================TOOLS-TO-GENERATE-NEUTRAL-TCR-REP-SEQ-TRAJECTORIES=====================================================
+#  Library functions to generate TCR repertoires
+##------------------------Initial-Distributions------------------------
+def _rho_counts_theo_minus_x(A, B, N_0):
     
+    # This function has been made to generate TCR clonal frequencies distribution from the theoretical model described in the paper 
+    # https://www.biorxiv.org/content/10.1101/2022.05.01.490247v1. 
+    # this function is not made for a NoisET user 
+
     # I am disretizing the logspace with nfbins = 100000
+
     
     Cmin = 1
     freq_dtype = 'float32'
@@ -70,8 +269,10 @@ def rho_counts_theo_minus_x(A, B, N_0):
     
     return log_rho_minus, log_countvec_minus, N_clones_1
 
-def rho_counts_theo_plus_x(A, B, N_0):
-    
+def _rho_counts_theo_plus_x(A, B, N_0):
+    # This function has been made to generate TCR clonal frequencies distribution from the theoretical model described in the paper 
+    # https://www.biorxiv.org/content/10.1101/2022.05.01.490247v1. 
+    # this function is not made for a NoisET user 
     # I am disretizing the logspace with nfbins = 100000, I can put a better discretization than for the minus
     # distribution
     
@@ -96,7 +297,11 @@ def rho_counts_theo_plus_x(A, B, N_0):
     return log_rho_plus, log_countvec_plus, N_clones_2
 
 
-def get_distsample(pmf,Nsamp, dtype='uint32'):
+def _get_distsample(pmf,Nsamp, dtype='uint32'):
+
+    # This function has been made to generate TCR clonal frequencies distribution from the theoretical model described in the paper 
+    # https://www.biorxiv.org/content/10.1101/2022.05.01.490247v1. 
+    # this function is not made for a NoisET user 
     '''
     generates Nsamp index samples of dtype (e.g. uint16 handles up to 65535 indices) from discrete probability mass function pmf.
     Handles multi-dimensional domain. N.B. Output is sorted.
@@ -117,12 +322,12 @@ def get_distsample(pmf,Nsamp, dtype='uint32'):
     sampled_inds = np.array(index[np.argsort(index[:,0])], dtype=dtype)
     return sampled_inds
 
-#======================================Propagator===============================================================
+##------------------------Propagator------------------------
+def _gaussian_matrix(x_vec, x_i_vec_unique, A, B, t):
 
-
-def gaussian_matrix(x_vec, x_i_vec_unique, A, B, t):
-    
-    
+    # This function has been made to generate TCR clonal frequencies distribution from the theoretical model described in the paper 
+    # https://www.biorxiv.org/content/10.1101/2022.05.01.490247v1. 
+    # this function is not made for a NoisET user
     x_vec_reshaped = np.reshape(x_vec, (len(x_vec), 1))
     ones_vec = np.ones((len(x_i_vec_unique), 1))
     M = np.multiply(ones_vec, x_vec_reshaped.T)
@@ -130,16 +335,22 @@ def gaussian_matrix(x_vec, x_i_vec_unique, A, B, t):
     
     return (1/np.sqrt(2*np.pi*B*t))*np.exp((-1/(2*B*t))*(M - x_i_unique_reshaped - A*t)**2)
 
-def gaussian_adsorption_matrix(x_vec, x_i_vec_unique, A, B, t):
-    
+def _gaussian_adsorption_matrix(x_vec, x_i_vec_unique, A, B, t):
+
+    # This function has been made to generate TCR clonal frequencies distribution from the theoretical model described in the paper 
+    # https://www.biorxiv.org/content/10.1101/2022.05.01.490247v1. 
+    # this function is not made for a NoisET user
     a = 0
-    gauss = gaussian_matrix(x_vec, x_i_vec_unique, A, B, t)
-    gauss_a = gaussian_matrix(x_vec, 2*a-x_i_vec_unique, A, B, t)
+    gauss = _gaussian_matrix(x_vec, x_i_vec_unique, A, B, t)
+    gauss_a = _gaussian_matrix(x_vec, 2*a-x_i_vec_unique, A, B, t)
     x_i_unique_reshaped = np.reshape(x_i_vec_unique, (len(x_i_vec_unique), 1))
     return gauss - np.exp((A*(a-x_i_unique_reshaped))/(B/2)) * gauss_a
 
-def extinction_vector(x_i, A, B, t): 
-    
+def _extinction_vector(x_i, A, B, t): 
+
+    # This function has been made to generate TCR clonal frequencies distribution from the theoretical model described in the paper 
+    # https://www.biorxiv.org/content/10.1101/2022.05.01.490247v1. 
+    # this function is not made for a NoisET user
     nbins = 2000
     eps = 1e-20
     #eps = 0
@@ -148,7 +359,7 @@ def extinction_vector(x_i, A, B, t):
     x_i_sorted = np.sort(x_i)
     
     xiind_vals, xi_start_ind, xi_counts=np.unique(x_i_sorted, return_counts=True,return_index=True)
-    Prop_Matrix = gaussian_adsorption_matrix(x_vec, xiind_vals, A, B, t)
+    Prop_Matrix = _gaussian_adsorption_matrix(x_vec, xiind_vals, A, B, t)
     
     dx =np.asarray(np.diff(x_vec)/2., dtype='float32')
     integ = np.sum(dx*(Prop_Matrix[:, 1:]+Prop_Matrix[:, :-1]), axis = 1)
@@ -163,10 +374,13 @@ def extinction_vector(x_i, A, B, t):
     
     return results_extinction, Prop_Matrix, x_vec, xiind_vals, xi_start_ind, xi_counts, p_ext
 
-#--------------------------------------------Source-term-no-frequency-dependency-------------------------------------------------------
+#------------------------Source-term-no-frequency-dependency------------------------
 
-## Functions for the source term
-def gaussian_matrix_time(x_vec, x_i_scal, A, B, tvec_unique):
+def _gaussian_matrix_time(x_vec, x_i_scal, A, B, tvec_unique):
+
+    # This function has been made to generate TCR clonal frequencies distribution from the theoretical model described in the paper 
+    # https://www.biorxiv.org/content/10.1101/2022.05.01.490247v1. 
+    # this function is not made for a NoisET user
     
     x_vec_reshaped = np.reshape(x_vec, (len(x_vec), 1))
     ones_vec = np.ones((len(tvec_unique), 1))
@@ -176,17 +390,24 @@ def gaussian_matrix_time(x_vec, x_i_scal, A, B, tvec_unique):
     
     return (1/np.sqrt(2*np.pi*B*tvec_unique_reshaped))*np.exp((-1/(2*B*tvec_unique_reshaped))*(M - x_i_scal - A*tvec_unique_reshaped)**2)
 
-def gaussian_adsorption_matrix_time(x_vec, x_i_scal, A, B, tvec_unique):
+def _gaussian_adsorption_matrix_time(x_vec, x_i_scal, A, B, tvec_unique):
+
+    # This function has been made to generate TCR clonal frequencies distribution from the theoretical model described in the paper 
+    # https://www.biorxiv.org/content/10.1101/2022.05.01.490247v1. 
+    # this function is not made for a NoisET user
     
     a = 0
-    gauss = gaussian_matrix_time(x_vec, x_i_scal, A, B, tvec_unique)
-    gauss_a = gaussian_matrix_time(x_vec, 2*a-x_i_scal, A, B, tvec_unique)
+    gauss = _gaussian_matrix_time(x_vec, x_i_scal, A, B, tvec_unique)
+    gauss_a = _gaussian_matrix_time(x_vec, 2*a-x_i_scal, A, B, tvec_unique)
     
     return gauss - np.exp((A*(a-x_i_scal))/(B/2)) * gauss_a
 
-def Prop_Matrix_source( A, B, tvec): 
+def _Prop_Matrix_source( A, B, tvec): 
     
-    #st = time.time()
+    # This function has been made to generate TCR clonal frequencies distribution from the theoretical model described in the paper 
+    # https://www.biorxiv.org/content/10.1101/2022.05.01.490247v1. 
+    # this function is not made for a NoisET user
+
     nbins = 2000
     N_0 = 40
     x_i_scal = np.log(N_0)
@@ -196,18 +417,19 @@ def Prop_Matrix_source( A, B, tvec):
     tvec_sorted = np.sort(tvec)
     
     tiind_vals, ti_start_ind, ti_counts=np.unique(tvec_sorted, return_counts=True,return_index=True)
-    Prop_Matrix = gaussian_adsorption_matrix_time(x_vec, x_i_scal, A, B, tiind_vals)
+    Prop_Matrix = _gaussian_adsorption_matrix_time(x_vec, x_i_scal, A, B, tiind_vals)
     
     dx =np.asarray(np.diff(x_vec)/2., dtype='float32')
     integ = np.sum(dx*(Prop_Matrix[:, 1:]+Prop_Matrix[:, :-1]), axis = 1)
     
-    
-    #print(time.time() - st)
     return Prop_Matrix, x_vec, tiind_vals, ti_start_ind, ti_counts, integ
 
-def extinction_vector_source(A, B, tvec): 
+def _extinction_vector_source(A, B, tvec): 
+
+    # This function has been made to generate TCR clonal frequencies distribution from the theoretical model described in the paper 
+    # https://www.biorxiv.org/content/10.1101/2022.05.01.490247v1. 
+    # this function is not made for a NoisET user
     
-    #st = time.time()
     nbins = 2000
     N_0 = 40
     x_i_scal = np.log(N_0)
@@ -217,7 +439,7 @@ def extinction_vector_source(A, B, tvec):
     tvec_sorted = np.sort(tvec)
     
     tiind_vals, ti_start_ind, ti_counts=np.unique(tvec_sorted, return_counts=True,return_index=True)
-    Prop_Matrix = gaussian_adsorption_matrix_time(x_vec, x_i_scal, A, B, tiind_vals)
+    Prop_Matrix = _gaussian_adsorption_matrix_time(x_vec, x_i_scal, A, B, tiind_vals)
     
     dx =np.asarray(np.diff(x_vec)/2., dtype='float32')
     integ = np.sum(dx*(Prop_Matrix[:, 1:]+Prop_Matrix[:, :-1]), axis = 1)
@@ -230,24 +452,16 @@ def extinction_vector_source(A, B, tvec):
     test = np.random.uniform(0,1, size = (len(p_ext_new))) > p_ext_new
     results_extinction = test.astype(int)
     
-    #print(time.time() - st)
+
     return results_extinction, Prop_Matrix, x_vec, tiind_vals, ti_start_ind, ti_counts, p_ext
 
-#---------------------------------------------------------------------------------------------------------------
+##------------------------Function-to-generate-in-silico-Rep-Seq-samples------------------------
 
-def generator_diffusion_LB(A, B, N_0, t):
+def _generator_diffusion_LB(A, B, N_0, t):
     
-    '''
-    Generate steady state distributions of log-populations/ populations for one individual with following parameters:
-    A :
-    B : 
-    N_0 :
-    
-    Second-step of this code is to use Euler-Mayurana scheme to simulate stochastic simulations from initial 
-    time to 2 years afterwards, it is important to have small enough dt for the absorbing 
-    boundary condition to be satisfied. 
-
-    '''
+    # This function has been made to generate TCR clonal frequencies distribution from the theoretical model described in the paper 
+    # https://www.biorxiv.org/content/10.1101/2022.05.01.490247v1. 
+    # this function is not made for a NoisET user
     
     eps = 1e-20
     
@@ -262,10 +476,10 @@ def generator_diffusion_LB(A, B, N_0, t):
     #==========================generate the steady state distribution===============================
     
     #for counts < N0: 
-    logrhofvec,logfvec, N_clones_1 = rho_counts_theo_minus_x(A, B, N_0)
+    logrhofvec,logfvec, N_clones_1 = _rho_counts_theo_minus_x(A, B, N_0)
     dlogfby2=np.asarray(np.diff(logfvec)/2., dtype='float32')
     integ=np.exp(logrhofvec[np.newaxis,:])
-    f_samples_inds=get_distsample(np.asarray((dlogfby2[np.newaxis,:]*(integ[:,1:]+integ[:,:-1])).flatten(),dtype='float32'), N_clones_1,dtype='uint32').flatten()
+    f_samples_inds=_get_distsample(np.asarray((dlogfby2[np.newaxis,:]*(integ[:,1:]+integ[:,:-1])).flatten(),dtype='float32'), N_clones_1,dtype='uint32').flatten()
     #print("generation population smaller than N_0: check")
     
     logcvec_generated = logfvec[f_samples_inds]
@@ -278,10 +492,10 @@ def generator_diffusion_LB(A, B, N_0, t):
     
     #for counts > N0:
     
-    logrhofvec,logfvec, N_clones_2 = rho_counts_theo_plus_x(A, B, N_0)
+    logrhofvec,logfvec, N_clones_2 = _rho_counts_theo_plus_x(A, B, N_0)
     dlogfby2=np.asarray(np.diff(logfvec)/2., dtype='float32')
     integ=np.exp(logrhofvec[np.newaxis,:])
-    f_samples_inds=get_distsample(np.asarray((dlogfby2[np.newaxis,:]*(integ[:,1:]+integ[:,:-1])).flatten(),dtype='float32'),N_clones_2,dtype='uint32').flatten()
+    f_samples_inds=_get_distsample(np.asarray((dlogfby2[np.newaxis,:]*(integ[:,1:]+integ[:,:-1])).flatten(),dtype='float32'),N_clones_2,dtype='uint32').flatten()
     #print("generation population larger than N_0: check")
     logcvec_generated = logfvec[f_samples_inds]
     counts_generated = np.exp(logcvec_generated)
@@ -307,19 +521,11 @@ def generator_diffusion_LB(A, B, N_0, t):
     
     
     
-    results_extinction, Prop_Matrix, x_vec, xiind_vals, xi_start_ind, xi_counts, p_ext = extinction_vector(x_i, A, B, t)
+    results_extinction, Prop_Matrix, x_vec, xiind_vals, xi_start_ind, xi_counts, p_ext = _extinction_vector(x_i, A, B, t)
     #x_vec = np.linspace(0, 30*B*t, 2000)
     dx=np.asarray(np.diff(x_vec)/2., dtype='float32')
     
     x_i_noext= x_i[np.where(results_extinction ==1)]
-    
-    #print('NO_EXTINCT'+ str(len(x_i_noext)))
-    
-    
-    #xiind_vals, xi_start_ind, xi_counts=np.unique(x_i,return_counts=True,return_index=True)
-    #Prop_Matrix = gaussian_adsorption_matrix(x_vec, xiind_vals, A, B, t)
-    
-    
     x_f = np.zeros((len(x_i)))
     
     for i in range(len(xiind_vals)): 
@@ -332,19 +538,14 @@ def generator_diffusion_LB(A, B, N_0, t):
         
             Prop_adsorp = Prop_Matrix[i,:] / (np.dot(dx, Prop_Matrix[i,1:] + Prop_Matrix[i, :-1]))
 
-
-            #print(np.dot(dx, Prop_adsorp[1:] + Prop_adsorp[:-1]))
             integ = Prop_adsorp[np.newaxis,:]
-            #print(np.dot(dx[np.newaxis,:], integ[i,1:] + integ[i, :-1]))
-            #integ_bis = integ/np.asarray((dx[np.newaxis,:]*(integ[:,1:]+integ[:,:-1])))
-            f_samples_inds =get_distsample(np.asarray((dx[np.newaxis,:]*(integ[:,1:]+integ[:,:-1])).flatten(),dtype='float32'), xi_counts[i],dtype='uint32').flatten()
+            f_samples_inds = _get_distsample(np.asarray((dx[np.newaxis,:]*(integ[:,1:]+integ[:,:-1])).flatten(),dtype='float32'), xi_counts[i],dtype='uint32').flatten()
 
             x_f[xi_start_ind[i]:xi_start_ind[i]+xi_counts[i]] = x_vec[f_samples_inds]
     
     x_f = np.multiply(x_f,results_extinction)
     
-    
-    #x_f[x_f == 0] = -eps
+
     x_f[x_f == 0] = -np.inf
     
     N_extinction = np.sum(1- results_extinction)
@@ -370,14 +571,9 @@ def generator_diffusion_LB(A, B, N_0, t):
     time_vec = np.random.choice(time_vec_span, N_source)
     time_vec = np.sort(time_vec)
     
-    results_extinction_source, Prop_Matrix_source, x_vec_source, tiind_vals, ti_start_ind, ti_counts, p_ext_source = extinction_vector_source(A, B, time_vec)
-
-    #if np.sum(1-results_extinction_source)/len(x_i_LB) < 1e-2:
-    #    pass
+    results_extinction_source, Prop_Matrix_source, x_vec_source, tiind_vals, ti_start_ind, ti_counts, p_ext_source = _extinction_vector_source(A, B, time_vec)
 
     dx_source=np.asarray(np.diff(x_vec_source)/2., dtype='float32')
-
-
 
     x_source_LB = np.zeros((N_source))
     for i in range(len(tiind_vals)): 
@@ -391,7 +587,7 @@ def generator_diffusion_LB(A, B, N_0, t):
 
 
             integ = Prop_adsorp_s[np.newaxis,:]
-            f_samples_inds_s = get_distsample(np.asarray((dx_source[np.newaxis,:]*(integ[:,1:]+integ[:,:-1])).flatten(),dtype='float32'), ti_counts[i],dtype='uint32').flatten()
+            f_samples_inds_s = _get_distsample(np.asarray((dx_source[np.newaxis,:]*(integ[:,1:]+integ[:,:-1])).flatten(),dtype='float32'), ti_counts[i],dtype='uint32').flatten()
 
             x_source_LB[ti_start_ind[i]:ti_start_ind[i]+ti_counts[i]] = x_vec_source[f_samples_inds_s]
             
@@ -404,7 +600,12 @@ def generator_diffusion_LB(A, B, N_0, t):
     
     return x_i, x_f, Prop_Matrix, p_ext, results_extinction, time_vec, results_extinction_source, x_source_LB
 
-def experimental_sampling_diffusion_Poisson(NreadsI, NreadsII, x_0, x_2, t, N_cell_0, N_cell_2):
+def _experimental_sampling_diffusion_Poisson(NreadsI, NreadsII, x_0, x_2, t, N_cell_0, N_cell_2):
+
+
+    # This function has been made to generate TCR clonal frequencies distribution from the theoretical model described in the paper 
+    # https://www.biorxiv.org/content/10.1101/2022.05.01.490247v1. 
+    # this function is not made for a NoisET user
     
     
     #----------------------------Counts generation --------------------------------------------
@@ -444,11 +645,6 @@ def experimental_sampling_diffusion_Poisson(NreadsI, NreadsII, x_0, x_2, t, N_ce
     print(n_counts_day_1)
     n_counts_day_1 = n_counts_day_1[0,:]
     
-    #print('done')
-    
-    
-    #n_counts_day_0_bis = np.random.choice(n_counts_day_0, N_total)
-    #n_counts_day_1_bis = np.random.choice
 
     #-------------------------------Creation of the data set-------------------------------------
     
@@ -463,7 +659,7 @@ def experimental_sampling_diffusion_Poisson(NreadsI, NreadsII, x_0, x_2, t, N_ce
     
     return pair_samples_df
 
-def experimental_sampling_diffusion_NegBin(NreadsI, NreadsII, paras, x_0, x_2, N_cell_0, N_cell_2):
+def _experimental_sampling_diffusion_NegBin(NreadsI, NreadsII, paras, x_0, x_2, N_cell_0, N_cell_2):
     
     
     #----------------------------Counts generation --------------------------------------------
@@ -525,12 +721,7 @@ def experimental_sampling_diffusion_NegBin(NreadsI, NreadsII, paras, x_0, x_2, N
     n_counts_day_1 = np.random.negative_binomial(nvec_end, 1-pvec_end, size =(1, int(N_total)))
     n_counts_day_1 = n_counts_day_1[0,:]
     print(n_counts_day_1)
-    
-    #print('done')
-    
-    
-    #n_counts_day_0_bis = np.random.choice(n_counts_day_0, N_total)
-    #n_counts_day_1_bis = np.random.choice
+
 
     #-------------------------------Creation of the data set-------------------------------------
     
@@ -545,42 +736,103 @@ def experimental_sampling_diffusion_NegBin(NreadsI, NreadsII, paras, x_0, x_2, N
     
     return pair_samples_df
 
+#==========================================================================================================================
 
-#===============================Data-Pre-Processing===================================
+
+#===============================Longitudinal-Data-Pre-Processing===================================
 
 class longitudinal_analysis():
 
-    def __init__(self, patient, data_folder, replicate_1_ID = '_F1', replicate_2_ID = '_F2'):
+    """
+    This class provides some tool to inspect and compute some simple statistics on longitudinal data associated with
+    one individual (it is independent of the NoisET software).
+    
+    ...
 
-        """
-        patient: string - ID of the patient for which RepSeq data is going to be analyzed
-        data_folder: string - name of the data-folder containing all the RepSeq samples of the longitudinal study
+    Attributes
+    ----------
+    clone_count_label : str
+        label in the clonotype tables indicating the clonotype count
+    seq_label : str
+        label in the clonotype tables indicating the sequence of the receptor
+    clones : dict of pandas.DataFrame
+        dictionary containing the clonotype tables as pandas frames. The keys are 
+        strings "patient_time", replicated are merged. Created in the initalization
+    times : list of float
+        ordered times of the imported tables. Created in the initialization
+    unique_clones : list of str
+        list of all the unique clonotype sequences in all the time points
+    time_occurrence : list of int
+        number of time points in which each clonotype appears. The index
+        refers to the clonotype in the unique_clones list
 
-        if there are replicates in the longitudinal RepSeq data:
-        replicate_1_ID : how you call the first biological replicate
-        replicate_2_ID : how you call the second biological replicate
-        """
+    Methods
+    -------
 
-        self.patient = patient
-        self.data_folder = data_folder
-        self.replicate_1_ID = replicate_1_ID
-        self.replicate_2_ID = replicate_2_ID
+    compute_clone_time_occurrence()
+        It creates two new attribues: the list of uniqe clonotypes in all the dataset 
+        "self.unique_clones" and the time occurrence of each of them "self.time_occurrence".
+        the time occurrence is the number of time points in which the clone appears.
+
+    plot_hist_persistence(figsize=(12,10))
+        It plots the distribution of time occurrence of the unique clonotypes
+
+    top_clones_set(n_top_clones)
+        Compute the set of top clones as the union of the "n_top_clones" most abundant
+        clonotype in each time point
+
+    build_traj_frame(top_clones_set)
+        Compute the set of top clones as the union of the "n_top_clones" most abundant
+        clonotype in each time point
+
+    plot_trajectories(n_top_clones, colormap='viridis', figsize=(12,10))
+        Function to plot the trajectories of the first "n_top_clones". Colors of the
+        trajectories represent the cumulative frequency in all the time points.
+
+    PCA_traj(n_top_clones, nclus=4)
+        Perform PCA over the normalized trajectories of n_top_clones TCR clones.
+        The normalization consists in dividing the whole trajectory by its maximum value.
+        After PCA the trajectories are clustered in the two principal componets space
+        with a hierarchical clustering algorithm.
+
+    plot_PCA2(n_top_clones, nclus=4, colormap='viridis', figsize=(12,10))
+        Plotting the trajectories in the space of their two principal components and
+        clustering them as in "PCA_traj".
+
+    plot_PCA_clusters_traj(n_top_clones, nclus=4, colormap='viridis', figsize=(12,10))
+        Plotting the trajectories grouped by PCA clusters
+    """
 
 
-    def import_clones(self):
 
+
+    def __init__(self, patient, data_folder, sequence_label='N. Seq. CDR3', clone_count_label='Clone count',
+                 replicate1_label='_F1', replicate2_label='_F2', separator='\t'):
         """ 
-        Function that imports all the clonotypes of a given patient and stores
-        them in a dictionary. It returns also the list of ordered time points
-        of such tables.
+        Import all the clonotypes of a given patient and store them in the dictionary "self.clones".
+        It also creates the list of times "self.times". During this process the replicates at the
+        same time points are merged together.
+        The names of the tables containing TCR should be structured as "patient_time_replicate.csv".
+        Those tables should be cvs files compressed in a zip archive (see the example notebook).
+
+        Parameters
+        ----------
+        patient : str
+            The ID of the patient
+        data_folder : str
+            folder name containing the csv files listing the T-cell receptors
+        separator : str
+            separator symbol in the csv tables
         """
+        
+        self.clone_count_label = clone_count_label
+        self.seq_label = sequence_label
+        self.unique_clones = None
+        self.time_occurrence = None
+        self.times = []
+        clones_repl = dict()
 
-        patient = self.patient
-        data_folder = self.data_folder
-        times = []
-        clones = dict()
-
-        # Iteration over all the file in the folder
+        # Iteration over all the file in the folder for importing each table
         for file_name in os.listdir(data_folder):
         # If the name before the underscore corresponds to the chosen patient..
             if file_name.split('_')[0] == patient:
@@ -588,119 +840,152 @@ class longitudinal_analysis():
                 frame = pd.read_csv(data_folder+file_name, sep='\t', compression=dict(method='zip'))
                 # Store it in a dictionary where the key contains the patient, the time
                 # and the replicate.
-                clones[file_name[:-10]] = frame
+                clones_repl[file_name[:-10]] = frame
                 # Reading the time from the name and storing it
-                times.append(int(file_name.split('_')[1]))
-                #print('Clonotypes',file_name[:-10],'imported')
+                self.times.append(int(file_name.split('_')[1]))
+                print('Clonotypes',file_name[:-10],'imported')
 
         # Sorting the unique times
-        times = np.sort(list(set(times)))
-        return clones, times
-
-    def merge_replicates(self, ntCDR3 = 'N. Seq. CDR3'):
+        self.times = np.sort(list(set(self.times)))
+        self.clones = self._merge_replicates(patient, clones_repl, replicate1_label, replicate2_label)
         
-        # Creating the dataframes for the merged replicates. After this operation the 
-        # clones_merged dictionary contains the the merged table of the first and second
-        # replicate. The indexes are the same as before without the F1/2 label.
 
-        patient = self.patient
-        clones, times = self.import_clones()
+    def _merge_replicates(self, patient, clones_repl, repl1_label, repl2_label):
+        
         clones_merged = dict()
 
-        replicate_1_ID = self.replicate_1_ID 
-        replicate_2_ID = self.replicate_2_ID
-
         # Iteration over the times
-        for it, t in enumerate(times):
+        for it, t in enumerate(self.times):
             # Building the ids correponding at 1st and 2nd replicate at given time point
-            id_F1 = patient + '_' + str(t) + replicate_1_ID
-            id_F2 = patient + '_' + str(t) + replicate_2_ID
+            id_F1 = patient + '_' + str(t) + repl1_label
+            id_F2 = patient + '_' + str(t) + repl2_label
             # Below all the rows of one table are appended to the rows of the other
-            merged_replicates = clones[id_F1].merge(clones[id_F2], how='outer')
+            merged_replicates = clones_repl[id_F1].merge(clones_repl[id_F2], how='outer')
             # But there are common clonotypes that now appear in two different rows 
             # (one for the first and one for the second replicate)! 
             # Below we collapse those common sequences and the counts of the two are summed 
-            merged_replicates = merged_replicates.groupby(ntCDR3, as_index=False).agg({'Clone count':sum})
+            merged_replicates = merged_replicates.groupby(self.seq_label, as_index=False).agg({self.clone_count_label:sum})
+            depth = merged_replicates[self.clone_count_label].sum()
+            merged_replicates['Clone freq'] = merged_replicates[self.clone_count_label] / depth
+            merged_replicates = merged_replicates.sort_values('Clone freq', ascending=False)
             # The merged table is then added to the dictionary
             clones_merged[patient + '_' + str(t)] = merged_replicates
 
         return clones_merged
 
-    def persistence_clones(self, ntCDR3 = 'N. Seq. CDR3'):
+    
+    def compute_clone_time_occurrence(self):
 
-        # A list of all the clonotypes appearing in all the time points is created
-        # Note that if one clonotype is present in 2 or more points, it will be repeated
-        # twice in the list.
+        """
+        It creates two new attribues: the list of uniqe clonotypes in all the dataset 
+        "self.unique_clones" and the time occurrence of each of them "self.time_occurrence".
+        the time occurrence is the number of time points in which the clone appears.
+        """
 
-        clones_merged = self.merge_replicates()
         all_clones = np.array([])
-        for id_, cl in clones_merged.items():
-            all_clones = np.append(all_clones, cl['N. Seq. CDR3'].values)
+        for id_, cl in self.clones.items():
+            all_clones = np.append(all_clones, cl[self.seq_label].values)
 
         # The following function returns the list of unique clonotypes and the number of
         # repetitions for each of them. 
         # Note that the number of repetitions is exactly the time occurrence
-        unique_clones, time_occurrence = np.unique(all_clones, return_counts = True)
-
-        return unique_clones, time_occurrence
+        self.unique_clones, self.time_occurrence = np.unique(all_clones, return_counts=True)
 
 
-    def plot_hist_persistence(self, filename,  ntCDR3 = 'N. Seq. CDR3', fontsize = 12):
+    def plot_hist_persistence(self, figsize=(12,10)):
 
-        clones, times = self.import_clones()
-        unique_clones, time_occurrence = self.persistence_clones()
+        """
+        It plots the distribution of time occurrence of the unique clonotypes
+
+        Parameters
+        ----------
+        figsize : tuple
+            width, height in inches
+        
+        Returns
+        -------
+        ax : matplotlib.axes._subplots.AxesSubplot
+            axes where to draw the plot
+        fig : matplotlib.figure.Figure
+            matplotlib figure
+        """
+
+        if type(self.unique_clones) != np.ndarray:
+            self.compute_clone_time_occurrence()
+            
+        fig, ax = plt.subplots(figsize=figsize)
+
         plt.rc('xtick', labelsize = 30)
         plt.rc('ytick', labelsize = 30)
 
-        plt.figure(figsize =(12,10))
-        plt.yscale('log')
-        plt.xlabel('Time occurrence', fontsize = 30)
-        plt.ylabel('Counts', fontsize = 30)
-        h=plt.hist(time_occurrence, bins=np.arange(1,len(times)+2)-0.5, rwidth=0.6)
-        plt.savefig(filename + '.pdf')
-
-    def get_top_clones_set(self, n_top_clones, ntCDR3 = 'N. Seq. CDR3', clone_count = 'Clone count'):
+        ax.set_yscale('log')
+        ax.set_xlabel('Time occurrence', fontsize = 30)
+        ax.set_ylabel('Counts', fontsize = 30)
+        ax.hist(self.time_occurrence, bins=np.arange(1,len(self.times)+2)-0.5, rwidth=0.6)
         
-        """
-        This returns the union of the n_top_clones of each time points.
+        return fig, ax
+        
+
+    def top_clones_set(self, n_top_clones):
+        
+        """ 
+        Compute the set of top clones as the union of the "n_top_clones" most abundant
+        clonotype in each time point
+
+        Parameters
+        ----------
+        n_top_clones : int
+            number of most abundant clontypes in each time point
+
+        Returns
+        -------
+        top_clones : set of str
+            set of top clones
         """
 
-        clones_merged = self.merge_replicates()
         top_clones = set()
-        for id_, cl in clones_merged.items():
-            top_clones_at_time = cl.sort_values(clone_count, ascending=False)[:n_top_clones]
-            top_clones = top_clones.union(top_clones_at_time[ntCDR3].values)
+        for id_, cl in self.clones.items():
+            top_clones_at_time = cl.sort_values(self.clone_count_label, ascending=False)[:n_top_clones]
+            top_clones = top_clones.union(top_clones_at_time[self.seq_label].values)
         return top_clones
+    
 
-    def build_traj_frame(self, top_clones_set, ntCDR3 = 'N. Seq. CDR3', clone_count = 'Clone count'):
+    def build_traj_frame(self, clone_set):
         
-        """
-        This builds a dataframe containing the count at all the time points for each 
-        of the clonotypes specified in top_clones_set.
-        The dataframe has also a field that contains the cumulative count.
-        """
-        # The trajectory dataframe is initialised with indexes as the clonotypes in
-        # top_clones_set
-        clones_merged = self.merge_replicates()
+        """ 
+        This builds a dataframe containing the frequency at all the time points for each 
+        of the clonotypes specified in clone_set.
+        The dataframe has also a field that contains the cumulative frequency.
 
-        traj_frame = pd.DataFrame(index=top_clones_set)
-        traj_frame['Clone cumul count'] = 0
+        Parameters
+        ----------
+        clones_set : iterable of str
+            list of clonotypes whose temporal trajectory is drawn
 
-        for id_, cl in clones_merged.items(): 
+        Returns
+        -------
+        traj_frame : pandas.DataFrame
+            dataframe containing the frequency at all the time points
+        """
+
+        traj_frame = pd.DataFrame(index=clone_set)
+        traj_frame['Clone cumul freq'] = 0
+
+        for id_, cl in self.clones.items(): 
 
             # Getting the time from the index of clones_merged
             t = id_.split('_')[1]
             # Selecting the clonotypes that are both in the frame at the given time 
             # point and in the list of top_clones_set
-            top_clones_at_time = top_clones_set.intersection(set(cl[ntCDR3]))
+            top_clones_at_time = clone_set.intersection(set(cl[self.seq_label]))
             # Creating a sub-dataframe containing only the clone in top_clones_at_time
-            clones_at_time = cl.set_index(ntCDR3).loc[top_clones_at_time]
+            clones_at_time = cl.set_index(self.seq_label).loc[top_clones_at_time]
             # Creating a new column in the trajectory frames for the counts at that time
-            traj_frame['t'+str(t)] = traj_frame.index.map(clones_at_time[clone_count].to_dict())
+            traj_frame['t'+str(t)] = traj_frame.index.map(clones_at_time['Clone freq'].to_dict())
             # The clonotypes not present at that time are NaN. Below we convert NaN in 0s
             traj_frame = traj_frame.fillna(0)
             # The cumulative count for each clonotype is updated
-            traj_frame['Clone cumul count'] += traj_frame['t'+str(t)]
+            traj_frame['Clone cumul freq'] += traj_frame['t'+str(t)]
         
         return traj_frame 
 
@@ -709,55 +994,93 @@ class longitudinal_analysis():
     # Plot clonal trajectories
 
 
-    def plot_trajectories(self, n_top_clones, filename, colormap = 'viridis', ntCDR3 = 'N. Seq. CDR3', clone_count = 'Clone count'):
+    def plot_trajectories(self, n_top_clones, colormap='viridis', figsize=(12,10)):
 
         """
-        Function to plot the trajectories of the first top n clones using your favorite colormap
+        Function to plot the trajectories of the first "n_top_clones". Colors of the
+        trajectories represent the cumulative frequency in all the time points.
+        
+        Parameters
+        ----------
+        n_top_clones : int
+            number of most abundant clontypes in each time point
+
+        colormap  : str
+            colors of the trajectories
+            
+        figsize : tuple
+            width, height in inches
+
+        Returns
+        -------
+        ax : matplotlib.axes._subplots.AxesSubplot
+            axes where to draw the plot
+        fig : matplotlib.figure.Figure
+            matplotlib figure
         """
 
         cmap = cm.get_cmap(colormap)
-        clones, times = self.import_clones()
-        top_clones = self.get_top_clones_set(n_top_clones, ntCDR3, clone_count  )
-        traj_frame = self.build_traj_frame(top_clones, ntCDR3, clone_count )
-
+        top_clones = self.top_clones_set(n_top_clones)
+        traj_frame = self.build_traj_frame(top_clones)
+        
+        fig, ax = plt.subplots(figsize=figsize)
         plt.rc('xtick', labelsize = 30)
         plt.rc('ytick', labelsize = 30)
-        plt.figure(figsize = (10,10))
-        plt.yscale('log')
-        plt.xlabel('time', fontsize = 25)
-        plt.ylabel('counts', fontsize = 25)
+        ax.set_yscale('log')
+        ax.set_xlabel('time', fontsize = 25)
+        ax.set_ylabel('frequency', fontsize = 25)
 
-        log_counts = np.log10(traj_frame['Clone cumul count'].values)
+        log_counts = np.log10(traj_frame['Clone cumul freq'].values)
         max_log_count = max(log_counts)
         min_log_count = min(log_counts)
 
         for id_, row in traj_frame.iterrows():
-            traj = row.drop(['Clone cumul count']).to_numpy()
-            log_count = np.log10(row['Clone cumul count'])
+            traj = row.drop(['Clone cumul freq']).to_numpy()
+            log_count = np.log10(row['Clone cumul freq'])
             norm_log_count = (log_count-min_log_count)/(max_log_count-min_log_count)
-            plt.plot(times, traj+1, c=cmap(norm_log_count)) # I am adding 1 to define a kind of pseudo-count here and avoid 0 values
+            plt.plot(self.times, traj, c=cmap(norm_log_count))
 
 
         sm = plt.cm.ScalarMappable(cmap=cmap, norm=plt.Normalize(vmin=min(log_counts), vmax=max(log_counts)))
         cb = plt.colorbar(sm)
-        cb.set_label('Log10 cumulative count', fontsize = 25)
+        cb.set_label('Log10 cumulative frequency', fontsize = 25)
 
-        plt.savefig(filename + '.pdf')
+        return fig, ax
+    
 
-    def PCA_traj(self, n_top_clones, ntCDR3 = 'N. Seq. CDR3', clone_count = 'Clone count', nclus = 3):
+    def PCA_traj(self, n_top_clones, nclus=4):
 
         """
-        Perform PCA computation over the normalized trajectories of n_top_clones TCR clones
-        nclus: number of clusters of clonal dynamics, by default this number is set to 3
+        Perform PCA over the normalized trajectories of n_top_clones TCR clones.
+        The normalization consists in dividing the whole trajectory by its maximum value.
+        After PCA the trajectories are clustered in the two principal componets space
+        with a hierarchical clustering algorithm.
+        
+        Parameters
+        ----------
+        n_top_clones : int
+            number of most abundant clontypes in each time point to consider in the PCA
+
+        nclus : float
+            number of clusters 
+
+        
+        Returns
+        -------
+        pca : sklearn.decomposition._pca.PCA
+            object containing the result of the principal component analysis
+            
+        clustering : sklearn.cluster._agglomerative.AgglomerativeClustering
+            object containing the result of the hierarchical clustering
         """
 
         #Getting the top n_top_clones clonotypes at each time point
-        top_clones = self.get_top_clones_set(n_top_clones, ntCDR3, clone_count  )
+        top_clones = self.top_clones_set(n_top_clones)
         #Building a trajectory dataframe
-        traj_frame = self.build_traj_frame(top_clones, ntCDR3, clone_count )
+        traj_frame = self.build_traj_frame(top_clones)
 
         #Converting it in a numpy matrix
-        traj_matrix = traj_frame.drop(['Clone cumul count'], axis = 1).to_numpy()
+        traj_matrix = traj_frame.drop(['Clone cumul freq'], axis = 1).to_numpy()
 
         # Normalize each trajectory by its maximum
         norm_traj_matrix = traj_matrix/np.max(traj_matrix, axis=1)[:, np.newaxis]
@@ -769,88 +1092,151 @@ class longitudinal_analysis():
         return pca, clustering
 
 
-    def plot_clusters2D(self, n_top_clones, filename, ntCDR3 = 'N. Seq. CDR3', clone_count = 'Clone count', nclus = 3, colormap = 'viridis',):
+    def plot_PCA2(self, n_top_clones, nclus=4, colormap='viridis', figsize=(12,10)):
+
+        """
+        Plotting the trajectories in the space of their two principal components and
+        clustering them as in "PCA_traj".
+        
+        Parameters
+        ----------
+        n_top_clones : int
+            number of most abundant clontypes in each time point to consider in the PCA
+
+        nclus : float
+            number of clusters 
+
+        colormap : str
+            colormap indicating the different clusters
+
+        figsize : tuple
+            width, height in inches
+
+        Returns
+        -------
+        ax : matplotlib.axes._subplots.AxesSubplot
+            axes where to draw the plot
+        fig : matplotlib.figure.Figure
+            matplotlib figure
+        """
 
 
         cmap = cm.get_cmap(colormap)
-        pca, clustering = self.PCA_traj(n_top_clones, ntCDR3 = 'N. Seq. CDR3', clone_count = 'Clone count', nclus = 3)
+        pca, clustering = self.PCA_traj(n_top_clones, nclus)
 
-
-        #Getting the top n_top_clones clonotypes at each time point
-        top_clones = self.get_top_clones_set(n_top_clones, ntCDR3, clone_count  )
-        #Building a trajectory dataframe
-        traj_frame = self.build_traj_frame(top_clones, ntCDR3, clone_count )
-
-        #Converting it in a numpy matrix
-        traj_matrix = traj_frame.drop(['Clone cumul count'], axis = 1).to_numpy()
-
-        # Normalize each trajectory by its maximum
-        norm_traj_matrix = traj_matrix/np.max(traj_matrix, axis=1)[:, np.newaxis]
-
-        plt.figure(figsize= (12,10))
-        plt.title('PCA components (%i trajs)' %len(norm_traj_matrix), fontsize = 25)
-        plt.xlabel('First component (expl var: %3.2f)'%pca.explained_variance_ratio_[0], fontsize = 25)
-        plt.ylabel('Second component (expl var: %3.2f)'%pca.explained_variance_ratio_[1], fontsize = 25)
+        fig, ax = plt.subplots(figsize=figsize)
+        ax.set_title('PCA components (%i trajs)' %pca.n_features_, fontsize = 25)
+        ax.set_xlabel('First component (expl var: %3.2f)'%pca.explained_variance_ratio_[0], fontsize = 25)
+        ax.set_ylabel('Second component (expl var: %3.2f)'%pca.explained_variance_ratio_[1], fontsize = 25)
         for c_ind in range(clustering.n_clusters):
             x = pca.components_[0][clustering.labels_ == c_ind]
             y = pca.components_[1][clustering.labels_ == c_ind]
-            plt.scatter(x, y, alpha=0.2, color=cmap(c_ind/clustering.n_clusters))
+            ax.scatter(x, y, alpha=0.2, color=cmap(c_ind/clustering.n_clusters))
+        
+        return fig, ax
+    
+
+    def plot_PCA_clusters_traj(self, n_top_clones, nclus=4, colormap='viridis', figsize=(12,10)):
+
+        """
+        Plotting the trajectories grouped by PCA clusters
+        
+        Parameters
+        ----------
+        n_top_clones : int
+            number of most abundant clontypes in each time point to consider in the PCA
+
+        nclus : float
+            number of clusters 
+
+        colormap : str
+            colormap indicating the different clusters
+
+        figsize : tuple
+            width, height in inches
 
 
-        plt.savefig(filename + '.pdf')
-
-
-    def plot_traj_clusters(self, n_top_clones, filename, ntCDR3 = 'N. Seq. CDR3', clone_count = 'Clone count', nclus = 3, colormap = 'viridis',):
+        Returns
+        -------
+        axs : tuple of matplotlib.axes._subplots.AxesSubplot
+            axis where to draw the plot
+        fig : matplotlib.figure.Figure
+            matplotlib figure
+        """
 
         cmap = cm.get_cmap(colormap)
-        pca, clustering = self.PCA_traj(n_top_clones, ntCDR3 = 'N. Seq. CDR3', clone_count = 'Clone count', nclus = 3)
+        pca, clustering = self.PCA_traj(n_top_clones, nclus)
 
         n_cl = clustering.n_clusters
 
         #Getting the top n_top_clones clonotypes at each time point
-        top_clones = self.get_top_clones_set(n_top_clones, ntCDR3, clone_count  )
+        top_clones = self.top_clones_set(n_top_clones)
         #Building a trajectory dataframe
-        traj_frame = self.build_traj_frame(top_clones, ntCDR3, clone_count )
+        traj_frame = self.build_traj_frame(top_clones)
 
         #Converting it in a numpy matrix
-        traj_matrix = traj_frame.drop(['Clone cumul count'], axis = 1).to_numpy()
+        traj_matrix = traj_frame.drop(['Clone cumul freq'], axis=1).to_numpy()
 
         # Normalize each trajectory by its maximum
         norm_traj_matrix = traj_matrix/np.max(traj_matrix, axis=1)[:, np.newaxis]
-        clones, times = self.import_clones()
 
         fig, axs = plt.subplots(2, n_cl, figsize=(5*n_cl, 12))
         for cl in range(n_cl):
             trajs = norm_traj_matrix[clustering.labels_ == cl]
             axs[0][cl].set_xlabel('Time', fontsize = 15)
-            axs[0][cl].set_ylabel('Normalized counts', fontsize = 15)
+            axs[0][cl].set_ylabel('Normalized frequency', fontsize = 15)
             axs[1][cl].set_xlabel('Time', fontsize = 15)
-            axs[1][cl].set_ylabel('Normalized counts', fontsize = 15)
+            axs[1][cl].set_ylabel('Normalized frequency', fontsize = 15)
             for traj in trajs:
-                axs[0][cl].plot(times, traj, alpha=0.2, color=cmap(cl/n_cl))
+                axs[0][cl].plot(self.times, traj, alpha=0.2, color=cmap(cl/n_cl))
             axs[1][cl].set_ylim(0,1)
-            axs[1][cl].errorbar(times, np.mean(trajs, axis=0), 
+            axs[1][cl].errorbar(self.times, np.mean(trajs, axis=0), 
                                 yerr=np.std(trajs, axis=0), lw=3, color=cmap(cl/n_cl))
             #axs[1][cl].fill_between(times, np.quantile(trajs, 0.75, axis=0), np.quantile(trajs, 0.25, axis=0), color=colors[cl])
                
-
-        fig.savefig(filename + '.pdf') 
         plt.tight_layout()
+        return fig, axs
 
-
-
+#===============================Data-Pre-Processing===================================
 
 class Data_Process():
 
-    """Explain this class of methods 
-    path : string variable specifying the path to the data-set repository
-    filename1 : string specifying the name of the first sample associated to indiviual X
-    filename2 : string specifying the name of the second sample associated to indiviual X
-  
-    colnames1 : list of columns names of data-set - first sample
-    colnames2 : list of columns names of data-set - second sample """
+    """
+    ## TODO in the future, merge this class with other classes.
+
+    A class used to represent longitudinal RepSeq data and pre-analysis of the longitudinal data associated with
+    one individual.
+
+    ...
+
+    Attributes
+    ----------
+    path : str
+        the name of the path to get access to the data files to use for our analysis
+    filename1 : str
+        the name of the file of the RepSeq sample which can be the first replicate when deciphering the experimental noise 
+        or the first time point RepSeq sample when analysing responding clones to a stimulus between two time points.
+    filename2 : str
+        the name of the file of the RepSeq sample which can be the second replicate when deciphering the experimental noise 
+        or the second time point RepSeq sample when analysing responding clones to a stimulus between two time points.
+    colnames1 : str
+        list of columns names of data-set - first sample
+    colnames2 : str
+        list of columns names of data-set - second sample 
+
+
+    Methods
+    -------
+
+    import_data() : 
+        to import and merged two RepSeq samples and build a unique data-frame with frequencies and abundances of all TCR clones present in the 
+        union of both samples.
+    
+
+    """
 
     def __init__(self, path, filename1, filename2, colnames1,  colnames2):
+
         self.path = path
         self.filename1 = filename1
         self.filename2 = filename2
@@ -859,12 +1245,24 @@ class Data_Process():
     
 
     def import_data(self):
-        '''
-        Reads in Yellow fever data from two datasets and merges based on nt sequence.
-        Outputs dataframe of pair counts for all clonotypes.
-        Uses specified column names and headerline in stored fasta file.
+        """
+        TOFILL
         
-        '''
+        Parameters
+        ----------
+        NONE
+
+
+        Returns
+        -------
+        number_clones
+            numpy array, number of clones in the data frame which is the union of the two RepSeq used as entries of the function
+
+        df
+            pandas data-frame which is the data-frame containing the informations labeled in colnames vector string
+            for both RepSeq samples taken as input.
+
+        """
 
         mincount = 0
         maxcount = np.inf
@@ -908,13 +1306,30 @@ class Data_Process():
         
             
 
-#===============================Noise-Model=========================================
+#===============================Noise-Model===================================================================
+### Noise Model
 
-class Noise_Model:
+class Noise_Model():
 
+    """
+    A class used to build an object associated to methods in order to learn the experimental noise from same day 
+    biological RepSeq samples.
 
-    """ Noise_Model:
-    creation of an oject + methods to learn null noise model"""
+    ...
+
+    Methods
+    -------
+
+    get_sparserep(df) :
+        get sparse representation of the abundances / frequencies of the TCR clones present in both RepSeq samples of interest.
+        this changes the data input to fasten the algorithm
+
+    learn_null_model(df, noise_model, init_paras,  output_dir = None, filename = None, display_loss_function = False) :
+        function to optimize the likelihood associated to the experimental noise model and get the associated parameters.
+
+    diversity_estimate(df, paras, noise_model) :
+        function to get the estimation of diversity from the noise model information.
+    """
 
 
     def get_sparserep(self, df): 
@@ -923,7 +1338,41 @@ class Noise_Model:
         unicountvals_1(2) are the unique values of n1(2).
         sparse_rep_counts gives the counts of unique pairs.
         ndn1(2) is the index of unicountvals_1(2) giving the value of n1(2) in that unique pair.
-        len(indn1)=len(indn2)=len(sparse_rep_counts)"""
+        len(indn1)=len(indn2)=len(sparse_rep_counts)
+
+
+        Parameters
+        ----------
+        df : pandas data frame
+            data-frame which is the output of the method .import_data() for one Data_Process instance.
+            these data-frame should give the list of TCR clones present in two replicates RepSeq samples
+            associated to their clone frequencies and clone abundances in the first and second replicate.
+
+
+        Returns
+        -------
+        indn1
+            numpy array list of indexes of all values of unicountvals_1
+
+        indn2
+            numpy array list of indexes of all values of unicountvals_2
+
+        sparse_rep_counts
+            numpy array, # of clones having the read counts pair {(n1,n2)} 
+
+        unicountvals_1
+            numpy array list of unique counts values present in the first sample in df[clone_count_1]
+
+        unicountvals_2
+            numpy array list of unique counts values present in the second sample in df[clone_count_2]
+
+        Nreads1
+            float, total number of counts/reads in the first sample referred in df by "_1"
+
+        Nreads2
+            float, total number of counts/reads in the second sample referred in df by "_2"
+
+        """
         
         counts = df.loc[:,['Clone_count_1', 'Clone_count_2']]
         counts['paircount'] = 1  # gives a weight of 1 to each observed clone
@@ -943,7 +1392,7 @@ class Noise_Model:
 
 
 
-    def NegBinPar(self,m,v,mvec): 
+    def _NegBinPar(self,m,v,mvec): 
         '''
         Same as NegBinParMtr, but for m and v being scalars.
         Assumes m>0.
@@ -958,7 +1407,7 @@ class Noise_Model:
         NBvec=np.exp(np.cumsum(NBvec)[mvec]) #save a bit here
         return NBvec
 
-    def NegBinParMtr(self,m,v,nvec): #speed up only insofar as the log and exp are called once on array instead of multiple times on rows
+    def _NegBinParMtr(self,m,v,nvec): #speed up only insofar as the log and exp are called once on array instead of multiple times on rows
         ''' 
         computes NegBin probabilities over the ordered (but possibly discontiguous) vector (nvec) 
         for mean/variance combinations given by the mean (m) and variance (v) vectors. 
@@ -978,7 +1427,7 @@ class Noise_Model:
         NBvec=NBvec[:,nvec]
         return NBvec
 
-    def PoisPar(self, Mvec,unicountvals):
+    def _PoisPar(self, Mvec,unicountvals):
         #assert Mvec[0]==0, "first element needs to be zero"
         nmax=unicountvals[-1]
         nlen=len(unicountvals)
@@ -993,7 +1442,7 @@ class Noise_Model:
             Nmtr[:,0]=np.exp(-Mvec)
         return Nmtr
 
-    def get_rhof(self,alpha_rho, nfbins,fmin,freq_dtype):
+    def _get_rhof(self,alpha_rho, nfbins,fmin,freq_dtype):
         '''
         generates power law (power is alpha_rho) clone frequency distribution over 
         freq_nbins discrete logarithmically spaced frequences between fmin and 1 of dtype freq_dtype
@@ -1008,11 +1457,11 @@ class Noise_Model:
         return logrhovec,logfvec, normconst
 
 
-    def get_logPn_f(self,unicounts,Nreads,logfvec, noise_model, paras):
+    def _get_logPn_f(self,unicounts,Nreads,logfvec, noise_model, paras):
 
         """
+        tools to compute the likelihood of the noise model. It is not useful for the user.
         """
-
 
         # Choice of the model:
         
@@ -1054,9 +1503,9 @@ class Noise_Model:
 
             mean_m=m_total*np.exp(logfvec)
             var_m=mean_m+beta_mv*np.power(mean_m,alpha_mv)
-            Poisvec = self.PoisPar(mvec*r_c,unicounts)
+            Poisvec = self._PoisPar(mvec*r_c,unicounts)
             for f_it in range(len(logfvec)):
-                NBvec=self.NegBinPar(mean_m[f_it],var_m[f_it],mvec)
+                NBvec=self._NegBinPar(mean_m[f_it],var_m[f_it],mvec)
                 for n_it,n in enumerate(unicounts):
                     Pn_f[f_it,n_it]=np.dot(NBvec[m_low[n_it]:m_high[n_it]+1],Poisvec[m_low[n_it]:m_high[n_it]+1,n_it]) 
         
@@ -1064,11 +1513,11 @@ class Noise_Model:
 
             mean_n=Nreads*np.exp(logfvec)
             var_n=mean_n+beta_mv*np.power(mean_n,alpha_mv)
-            Pn_f = self.NegBinParMtr(mean_n,var_n,unicounts)
+            Pn_f = self._NegBinParMtr(mean_n,var_n,unicounts)
         elif noise_model==2:
 
             mean_n=Nreads*np.exp(logfvec)
-            Pn_f= self.PoisPar(mean_n,unicounts)
+            Pn_f= self._PoisPar(mean_n,unicounts)
         else:
             print('acq_model is 0,1, or 2 only')
 
@@ -1076,14 +1525,11 @@ class Noise_Model:
 
     #-----------------------------Null-Model-optimization--------------------------
         
-    def get_Pn1n2(self, paras, sparse_rep, noise_model):
+    def _get_Pn1n2(self, paras, sparse_rep, noise_model):
 
         """
-        
+        Tool to compute likelihood of the noise model. It is not useful for the user.
         """
-        # Choice of the model:
-
-
 
         indn1,indn2,sparse_rep_counts,unicountvals_1,unicountvals_2,NreadsI,NreadsII = sparse_rep
             
@@ -1096,14 +1542,14 @@ class Noise_Model:
         fmin = np.power(10,paras[-1])
 
         # 
-        logrhofvec, logfvec, normconst = self.get_rhof(alpha,nfbins,fmin,freq_dtype)
+        logrhofvec, logfvec, normconst = self._get_rhof(alpha,nfbins,fmin,freq_dtype)
 
         # 
 
         logfvec_tmp=deepcopy(logfvec)
 
-        logPn1_f = self.get_logPn_f(unicountvals_1, NreadsI,logfvec_tmp, noise_model, paras)
-        logPn2_f = self.get_logPn_f(unicountvals_2, NreadsII,logfvec_tmp, noise_model, paras)
+        logPn1_f = self._get_logPn_f(unicountvals_1, NreadsI,logfvec_tmp, noise_model, paras)
+        logPn2_f = self._get_logPn_f(unicountvals_2, NreadsII,logfvec_tmp, noise_model, paras)
 
         # for the trapezoid integral methods
 
@@ -1124,28 +1570,29 @@ class Noise_Model:
     
 
 
-    def callback(self, paras, nparas, sparse_rep, noise_model):
-        '''prints iteration info. called by scipy.minimize'''
+    def _callback(self, paras, nparas, sparse_rep, noise_model):
+        '''prints iteration info. called by scipy.minimize. Not useful for the user.'''
 
         global curr_iter
         #curr_iter = 0
         global Loss_function 
         print(''.join(['{0:d} ']+['{'+str(it)+':3.6f} ' for it in range(1,len(paras)+1)]).format(*([curr_iter]+list(paras))))
         #print ('{' + str(len(paras)+1) + ':3.6f}'.format( [self.get_Pn1n2(paras, sparse_rep, acq_model_type)]))
-        Loss_function = self.get_Pn1n2(paras, sparse_rep, noise_model)
+        Loss_function = self._get_Pn1n2(paras, sparse_rep, noise_model)
         print(Loss_function)
         curr_iter += 1
         
 
 
     # Constraints for the Null-Model, no filtered 
-    def nullmodel_constr_fn(self, paras, sparse_rep, noise_model, constr_type):
+    def _nullmodel_constr_fn(self, paras, sparse_rep, noise_model, constr_type):
             
         '''
         returns either or both of the two level-set functions: log<f>-log(1/N), with N=Nclones/(1-P(0,0)) and log(Z_f), with Z_f=N<f>_{n+n'=0} + sum_i^Nclones <f>_{f|n,n'}
+        not useful for the user
         '''
 
-    # Choice of the model: 
+        # Choice of the model: 
 
         indn1, indn2, sparse_rep_counts, unicountvals_1, unicountvals_2, NreadsI, NreadsII = sparse_rep
 
@@ -1156,14 +1603,14 @@ class Noise_Model:
         alpha = paras[0]  # power law exponent
         fmin = np.power(10, paras[-1]) # true minimal frequency 
 
-        logrhofvec, logfvec, normconst = self.get_rhof(alpha,nfbins,fmin,freq_dtype)
+        logrhofvec, logfvec, normconst = self._get_rhof(alpha,nfbins,fmin,freq_dtype)
         dlogfby2 = np.diff(logfvec) / 2.  # 1/2 comes from trapezoid integration below
 
         integ = np.exp(logrhofvec + 2 * logfvec)
         avgf_ps = np.dot(dlogfby2, integ[:-1] + integ[1:])
 
-        logPn1_f = self.get_logPn_f(unicountvals_1, NreadsI, logfvec, noise_model, paras)
-        logPn2_f = self.get_logPn_f(unicountvals_2, NreadsII, logfvec, noise_model, paras)
+        logPn1_f = self._get_logPn_f(unicountvals_1, NreadsI, logfvec, noise_model, paras)
+        logPn2_f = self._get_logPn_f(unicountvals_2, NreadsII, logfvec, noise_model, paras)
 
         integ = np.exp(logPn1_f[:, 0] + logPn2_f[:, 0] + logrhofvec + logfvec)
         Pn0n0 = np.dot(dlogfby2, integ[1:] + integ[:-1])
@@ -1199,12 +1646,36 @@ class Noise_Model:
 
 
         
-        # Null-Model optimization learning 
+    # Null-Model optimization learning 
 
-    def learn_null_model(self, df, noise_model, init_paras,  display_loss_function = False):  # constraint type 1 gives only low error modes, see paper for details.
-        '''
-        performs constrained maximization of null model likelihood
-        '''
+    def learn_null_model(self, df, noise_model, init_paras,  output_dir = None, filename = None, display_loss_function = False):  # constraint type 1 gives only low error modes, see paper for details.
+        """
+        Parameters
+        ----------
+        df : pandas data frame
+            data-frame which is the output of the method .import_data() for one Data_Process instance.
+            these data-frame should give the list of TCR clones present in two replicates RepSeq samples
+            associated to their clone frequencies and clone abundances in the first and second replicate.
+        noise_model: numpy array
+            choice of noise model 
+        init_paras: numpy array
+            initial vector of parameters to start the optimization of the model from data (df)
+        output_dir : str
+            default value is None, it is the output directory name i which we want to save the values of the parameters
+        display_loss_function : bool
+            boolean variable to chose if we want to print the loss function during the experimental noise learning, default value is 
+            None.
+        
+
+        Returns
+        -------
+        outstruct
+            numpy array parameters of the noise model
+
+        constr_value
+            float, value of the constraint 
+    
+        """
             
         # Data introduction
         sparse_rep = self.get_sparserep(df)
@@ -1221,10 +1692,10 @@ class Noise_Model:
 
         assert len(parameter_labels) == len(init_paras), "number of model and initial paras differ!"
 
-        condict = {'type': 'eq', 'fun': self.nullmodel_constr_fn, 'args': (sparse_rep, noise_model, constr_type)}
+        condict = {'type': 'eq', 'fun': self._nullmodel_constr_fn, 'args': (sparse_rep, noise_model, constr_type)}
 
 
-        partialobjfunc = partial(self.get_Pn1n2, sparse_rep=sparse_rep, noise_model=noise_model)
+        partialobjfunc = partial(self._get_Pn1n2, sparse_rep=sparse_rep, noise_model=noise_model)
         nullfunctol = 1e-6
         nullmaxiter = 200
         header = ['Iter'] + parameter_labels
@@ -1232,11 +1703,11 @@ class Noise_Model:
             
         global curr_iter
         curr_iter = 1
-        callbackp = partial(self.callback, nparas=len(init_paras), sparse_rep = sparse_rep, noise_model= noise_model)
+        callbackp = partial(self._callback, nparas=len(init_paras), sparse_rep = sparse_rep, noise_model= noise_model)
         outstruct = minimize(partialobjfunc, init_paras, method='SLSQP', callback=callbackp, constraints=condict,
                         options={'ftol': nullfunctol, 'disp': True, 'maxiter': nullmaxiter})
             
-        constr_value = self.nullmodel_constr_fn(outstruct.x, sparse_rep, noise_model, constr_type)
+        constr_value = self._nullmodel_constr_fn(outstruct.x, sparse_rep, noise_model, constr_type)
 
         if noise_model < 1:
             parameter_labels = ['alph_rho', 'beta', 'alpha', 'm_total', 'fmin']
@@ -1252,14 +1723,37 @@ class Noise_Model:
             df = pd.DataFrame(data = d)
 
 
+        if (output_dir == None) & (filename == None):
+            df.to_csv('nullpara' + str(noise_model)+ '.txt', sep = '\t')
 
-        df.to_csv('nullpara' + str(noise_model)+ '.txt', sep = '\t')
+        elif (output_dir != None) & (filename == None):
+            df.to_csv(output_dir + '/nullpara' + str(noise_model)+ '.txt', sep = '\t')
 
-        #np.save('nullpara' + str(noise_model), outstruct.x)
+        else :
+            df.to_csv(output_dir + '/' + filename + '.txt', sep = '\t')
 
         return outstruct, constr_value
 
     def diversity_estimate(self, df, paras, noise_model):
+
+        """
+        Estimate diversity of the individual repertoire from the experimental noise learning step. 
+
+        Parameters
+        ----------
+        df : data-frame 
+            The data-frame which has been used to learn the noise model
+        paras : numpy array
+            vector containing the noise parameters
+        noise_model : int
+            choice of noise model 
+
+        Returns
+        -------
+        diversity_estimate
+            float, diversity estimate from the noise model inference.
+    
+        """
 
         sparse_rep = self.get_sparserep(df)
 
@@ -1274,14 +1768,14 @@ class Noise_Model:
         fmin = np.power(10,paras[-1])
 
         # 
-        logrhofvec, logfvec, normconst = self.get_rhof(alpha,nfbins,fmin,freq_dtype)
+        logrhofvec, logfvec, normconst = self._get_rhof(alpha,nfbins,fmin,freq_dtype)
 
         # 
 
         logfvec_tmp=deepcopy(logfvec)
 
-        logPn1_f = self.get_logPn_f(unicountvals_1, NreadsI,logfvec_tmp, noise_model, paras)
-        logPn2_f = self.get_logPn_f(unicountvals_2, NreadsII,logfvec_tmp, noise_model, paras)
+        logPn1_f = self._get_logPn_f(unicountvals_1, NreadsI,logfvec_tmp, noise_model, paras)
+        logPn2_f = self._get_logPn_f(unicountvals_2, NreadsII,logfvec_tmp, noise_model, paras)
 
         # for the trapezoid integral methods
 
@@ -1299,11 +1793,25 @@ class Noise_Model:
 
 #============================================Differential expression =============================================================
 
-class Expansion_Model:
+class Expansion_Model():
     
     """
-    Explain Methods for this class
+    A class used to build an object associated to methods in order to select significant expanding or 
+    contracting clones from RepSeq samples taken at two different time points.
+
+    ...
+
+    Methods
+    -------
+
+    get_sparserep(df) :
+        get sparse representation of the abundances / frequencies of the TCR clones present in RepSeq samples of both time points.
+        This changes the data input to fasten the algorithm
+
+    expansion_table(outpath, paras_1, paras_2, df, noise_model, pval_threshold, smed_threshold):
+        generate the table of clones that have been significantly detected to be responsive to an acute stimuli.
     """
+
 
     def get_sparserep(self, df): 
         """
@@ -1311,7 +1819,41 @@ class Expansion_Model:
         unicountvals_1(2) are the unique values of n1(2).
         sparse_rep_counts gives the counts of unique pairs.
         ndn1(2) is the index of unicountvals_1(2) giving the value of n1(2) in that unique pair.
-        len(indn1)=len(indn2)=len(sparse_rep_counts)"""
+        len(indn1)=len(indn2)=len(sparse_rep_counts)
+
+
+        Parameters
+        ----------
+        df : pandas data frame
+            data-frame which is the output of the method .import_data() for one Data_Process instance.
+            these data-frame should give the list of TCR clones present in two RepSeq samples, talen at two 
+            different time points, associated to their clone frequencies and clone abundances in the first and second replicate?
+
+
+        Returns
+        -------
+        indn1
+            numpy array list of indexes of all values of unicountvals_1
+
+        indn2
+            numpy array list of indexes of all values of unicountvals_2
+
+        sparse_rep_counts
+            numpy array, # of clones having the read counts pair {(n1,n2)} 
+
+        unicountvals_1
+            numpy array list of unique counts values present in the first sample in df[clone_count_1]
+
+        unicountvals_2
+            numpy array list of unique counts values present in the second sample in df[clone_count_2]
+
+        Nreads1
+            float, total number of counts/reads in the first sample referred in df by "_1" for first time point
+
+        Nreads2
+            float, total number of counts/reads in the second sample referred in df by "_2" for second time point
+
+        """
         
         counts = df.loc[:,['Clone_count_1', 'Clone_count_2']]
         counts['paircount'] = 1  # gives a weight of 1 to each observed clone
@@ -1331,7 +1873,7 @@ class Expansion_Model:
 
     
 
-    def NegBinPar(self,m,v,mvec): 
+    def _NegBinPar(self,m,v,mvec): 
         '''
         Same as NegBinParMtr, but for m and v being scalars.
         Assumes m>0.
@@ -1347,7 +1889,7 @@ class Expansion_Model:
         return NBvec
 
 
-    def NegBinParMtr(self,m,v,nvec): #speed up only insofar as the log and exp are called once on array instead of multiple times on rows
+    def _NegBinParMtr(self,m,v,nvec): #speed up only insofar as the log and exp are called once on array instead of multiple times on rows
         ''' 
         computes NegBin probabilities over the ordered (but possibly discontiguous) vector (nvec) 
         for mean/variance combinations given by the mean (m) and variance (v) vectors. 
@@ -1367,7 +1909,7 @@ class Expansion_Model:
         NBvec=NBvec[:,nvec]
         return NBvec
 
-    def PoisPar(self, Mvec,unicountvals):
+    def _PoisPar(self, Mvec,unicountvals):
         #assert Mvec[0]==0, "first element needs to be zero"
         nmax=unicountvals[-1]
         nlen=len(unicountvals)
@@ -1382,7 +1924,7 @@ class Expansion_Model:
             Nmtr[:,0]=np.exp(-Mvec)
         return Nmtr
 
-    def get_rhof(self,alpha_rho, nfbins,fmin,freq_dtype):
+    def _get_rhof(self,alpha_rho, nfbins,fmin,freq_dtype):
         '''
         generates power law (power is alpha_rho) clone frequency distribution over 
         freq_nbins discrete logarithmically spaced frequences between fmin and 1 of dtype freq_dtype
@@ -1397,11 +1939,12 @@ class Expansion_Model:
         return logrhovec,logfvec
 
     
-    def get_logPn_f(self,unicounts,Nreads,logfvec, noise_model, paras):
+    def _get_logPn_f(self,unicounts,Nreads,logfvec, noise_model, paras):
 
-        """"""
-
-
+        """
+        tools to compute the likelihood of the noise model. It is not useful for the user.
+        """
+        
         # Choice of the model:
         
         if noise_model<1:
@@ -1442,9 +1985,9 @@ class Expansion_Model:
 
             mean_m=m_total*np.exp(logfvec)
             var_m=mean_m+beta_mv*np.power(mean_m,alpha_mv)
-            Poisvec = self.PoisPar(mvec*r_c,unicounts)
+            Poisvec = self._PoisPar(mvec*r_c,unicounts)
             for f_it in range(len(logfvec)):
-                NBvec=self.NegBinPar(mean_m[f_it],var_m[f_it],mvec)
+                NBvec=self._NegBinPar(mean_m[f_it],var_m[f_it],mvec)
                 for n_it,n in enumerate(unicounts):
                     Pn_f[f_it,n_it]=np.dot(NBvec[m_low[n_it]:m_high[n_it]+1],Poisvec[m_low[n_it]:m_high[n_it]+1,n_it]) 
         
@@ -1452,17 +1995,17 @@ class Expansion_Model:
 
             mean_n=Nreads*np.exp(logfvec)
             var_n=mean_n+beta_mv*np.power(mean_n,alpha_mv)
-            Pn_f = self.NegBinParMtr(mean_n,var_n,unicounts)
+            Pn_f = self._NegBinParMtr(mean_n,var_n,unicounts)
         elif noise_model==2:
 
             mean_n=Nreads*np.exp(logfvec)
-            Pn_f= self.PoisPar(mean_n,unicounts)
+            Pn_f= self._PoisPar(mean_n,unicounts)
         else:
             print('acq_model is 0,1,or 2 only')
 
         return np.log(Pn_f)
 
-    def get_Ps(self, alp,sbar,smax,stp):
+    def _get_Ps(self, alp,sbar,smax,stp):
         '''
         generates symmetric exponential distribution over log fold change
         with effect size sbar and nonresponding fraction 1-alp at s=0.
@@ -1476,24 +2019,15 @@ class Expansion_Model:
         Ps[s_zeroind]+=(1-alp)
         return Ps
 
-    def callbackFdiffexpr(self, Xi): #case dependent
+    def _callbackFdiffexpr(self, Xi): #case dependent
         '''prints iteration info. called scipy.minimize'''
                
         print('{0: 3.6f}   {1: 3.6f}   '.format(Xi[0], Xi[1])+'\n')   
     
 
-    def learning_dynamics_expansion_polished(self, df, paras_1, paras_2,  noise_model):
+    def _learning_dynamics_expansion_polished(self, df, paras_1, paras_2,  noise_model):
         """
-        Different uses for this function to explain, explain the use of NreadsItrue and NreadsIItrue
-        paras : 
-        sparse_rep :
-        noise_model : 
-        not_filtered : True if all the repertoire is used to infer the dynamics paramers, false if data is filtered
-        NreadsItrue : the total number of reads in the original sample at time 1
-        NreadsII true: the total number of reads in the original sample at time 2
-        time_unit : day, months or years
-        time_1 : indication of the first sample extraction time
-        time_2 : indication of the second sample extraction time
+        function to infer the expansion mode parameters - not usable by the user.
         """
 
         indn1,indn2,sparse_rep_counts,unicountvals_1,unicountvals_2,NreadsI,NreadsII = self.get_sparserep(df)
@@ -1540,10 +2074,10 @@ class Expansion_Model:
                 Nreads = NreadsII
                 paras = paras_2
             if it == 0:
-                logPn1_f = self.get_logPn_f( unicounts, Nreads, logfvec_tmp, noise_model, paras)
+                logPn1_f = self._get_logPn_f( unicounts, Nreads, logfvec_tmp, noise_model, paras)
 
             else:
-                logPn2_f = self.get_logPn_f(unicounts, Nreads, logfvec_tmp, noise_model, paras)
+                logPn2_f = self._get_logPn_f(unicounts, Nreads, logfvec_tmp, noise_model, paras)
 
         #for the trapezoid method
         dlogfby2=np.diff(logfvec)/2 
@@ -1572,7 +2106,7 @@ class Expansion_Model:
             alp = PARAS[0]
             sbar = PARAS[1]
 
-            Ps = get_Ps(self,alp,sbar,smax,s_step)
+            Ps = _get_Ps(self,alp,sbar,smax,s_step)
             Pn0n0=np.dot(Pn0n0_s,Ps)
             Pn1n2_ps=np.sum(Pn1n2_s*Ps[:,np.newaxis,np.newaxis],0)
             Pn1n2_ps/=1-Pn0n0
@@ -1612,16 +2146,13 @@ class Expansion_Model:
         initparas=(optA,optB)  
     
 
-        outstruct = minimize(cost, initparas, method='SLSQP', callback=callbackFdiffexpr, tol=1e-6,options={'ftol':1e-8 ,'disp': True,'maxiter':300})
+        outstruct = minimize(cost, initparas, method='SLSQP', callback=_callbackFdiffexpr, tol=1e-6,options={'ftol':1e-8 ,'disp': True,'maxiter':300})
 
         return outstruct.x, Pn1n2_s, Pn0n0_s, svec
 
-    def learning_dynamics_expansion(self, sparse_rep, paras_1, paras_2, noise_model, display_plot=False):
+    def _learning_dynamics_expansion(self, sparse_rep, paras_1, paras_2, noise_model, display_plot=False):
         """
-        Different uses for this function to explain, explain the use of NreadsItrue and NreadsIItrue
-        paras : 
-        sparse_rep :
-        noise_model: 
+        function to infer the expansion mode parameters - not usable by the user.
         """
 
         indn1,indn2,sparse_rep_counts,unicountvals_1,unicountvals_2,NreadsI,NreadsII = sparse_rep
@@ -1668,10 +2199,10 @@ class Expansion_Model:
                 Nreads = NreadsII
                 paras = paras_2
             if it == 0:
-                logPn1_f = self.get_logPn_f(unicounts, Nreads, logfvec_tmp, noise_model, paras)
+                logPn1_f = self._get_logPn_f(unicounts, Nreads, logfvec_tmp, noise_model, paras)
 
             else:
-                logPn2_f = self.get_logPn_f(unicounts, Nreads, logfvec_tmp, noise_model, paras)
+                logPn2_f = self._get_logPn_f(unicounts, Nreads, logfvec_tmp, noise_model, paras)
 
         #for the trapezoid method
         dlogfby2=np.diff(logfvec)/2 
@@ -1700,7 +2231,7 @@ class Expansion_Model:
             alp = PARAS[0]
             sbar = PARAS[1]
 
-            Ps = self.get_Ps(alp,sbar,smax,s_step)
+            Ps = self._get_Ps(alp,sbar,smax,s_step)
             Pn0n0=np.dot(Pn0n0_s,Ps)
             Pn1n2_ps=np.sum(Pn1n2_s*Ps[:,np.newaxis,np.newaxis],0)
             Pn1n2_ps/=1-Pn0n0
@@ -1760,12 +2291,14 @@ class Expansion_Model:
         return LSurface, Pn1n2_s, Pn0n0_s, svec
  
 
-    def save_table(self, outpath, svec, Ps,Pn1n2_s, Pn0n0_s,  subset, unicountvals_1_d, unicountvals_2_d, indn1_d, indn2_d, print_expanded, pthresh, smedthresh):
+    def _save_table(self, outpath, svec, Ps,Pn1n2_s, Pn0n0_s,  subset, unicountvals_1_d, unicountvals_2_d, indn1_d, indn2_d, print_expanded, pthresh, smedthresh):
         '''
         takes learned diffexpr model, Pn1n2_s*Ps, computes posteriors over (n1,n2) pairs, and writes to file a table of data with clones as rows and columns as measures of thier posteriors 
         print_expanded=True orders table as ascending by , else descending
         pthresh is the threshold in 'p-value'-like (null hypo) probability, 1-P(s>0|n1_i,n2_i), where i is the row (i.e. the clone) n.b. lower null prob implies larger probability of expansion
         smedthresh is the threshold on the posterior median, below which clones are discarded
+
+        not usable by the user. 
         '''
 
         Psn1n2_ps=Pn1n2_s*Ps[:,np.newaxis,np.newaxis] 
@@ -1841,12 +2374,37 @@ class Expansion_Model:
 
     def expansion_table(self, outpath, paras_1, paras_2, df, noise_model, pval_threshold, smed_threshold):
 
-        """
-        
-        """
+        '''
+        generate the table of clones that have been significantly detected to be responsive to an acute stimuli.    
+    
+        Parameters
+        ----------
+        outpath  : str
+            Name of the directory where to store the output table
+        paras_1  : numpy array
+            parameters of the noise model that has been learned at time_1
+        paras_2  : numpy array
+            parameters of the noise model that has been learned at time_2
+        df       : pandas dataframe 
+            pandas dataframe merging the two RepSeq data at time_1 and time_2
+
+        noise_model : int
+            choice of noise model 0: Poisson, 1: negative Binomial, 2: negative Binomial + Poisson  
+
+        pval_threshold : float
+            P-value threshold to detect and discriminate if a TCR clone has expanded 
+
+        smed_threshold : float
+            median of the log-fold change threshold to detect if a TCR clone has expanded 
+
+        Returns
+        -------
+        data-frame - csv file
+            the output is a csv file of columns : $s_{1-low}$, $s_{2-med}$, $s_{3-high}$, $s_{max}$, $\bar{s}$, $f_1$, $f_2$, $n_1$, $n_2$, 'CDR3_nt', 'CDR3_AA' and '$p$-value'
+        '''
 
         sparse_rep = self.get_sparserep(df)
-        L_surface, Pn1n2_s_d, Pn0n0_s_d, svec = self.learning_dynamics_expansion(sparse_rep, paras_1, paras_2, noise_model)
+        L_surface, Pn1n2_s_d, Pn0n0_s_d, svec = self._learning_dynamics_expansion(sparse_rep, paras_1, paras_2, noise_model)
         npoints= 50 # same as in learning_dynamics_expansion
         smax = 25.0     
         s_step = 0.1
@@ -1855,19 +2413,36 @@ class Expansion_Model:
         maxinds=np.unravel_index(np.argmax(L_surface),np.shape(L_surface))
         optsbar=sbarvec[maxinds[0]]
         optalp=alpvec[maxinds[1]]
-        optPs= self.get_Ps(optalp,optsbar,smax,s_step)
+        optPs= self._get_Ps(optalp,optsbar,smax,s_step)
         pval_expanded = True
 
         indn1,indn2,sparse_rep_counts, unicountvals_1, unicountvals_2, NreadsI, NreadsII = sparse_rep
 
-        self.save_table(outpath, svec, optPs, Pn1n2_s_d, Pn0n0_s_d,  df, unicountvals_1, unicountvals_2, indn1, indn2, pval_expanded, pval_threshold, smed_threshold)
+        self._save_table(outpath, svec, optPs, Pn1n2_s_d, Pn0n0_s_d,  df, unicountvals_1, unicountvals_2, indn1, indn2, pval_expanded, pval_threshold, smed_threshold)
 
 
 #============================================Generate Synthetic Data =============================================================
 
 class Generator:
 
-    def get_rhof(self, alpha_rho, fmin, freq_nbins=800, freq_dtype='float64'):
+    """
+    A class used to build an object to generate in-Silico (synthetic) RepSeq samples, in the case of replicates at
+    the same day and in the case of having 2 samples generated at an initial time for the first one and some time after (months, years)
+    for the second one using the geometric Brownian motion model decribed in https://www.biorxiv.org/content/10.1101/2022.05.01.490247v1.
+
+    ...
+
+    Methods
+    -------
+
+    gen_synthetic_data_Null(paras, noise_model, NreadsI,NreadsII,Nsamp):
+        generate in-silico same day RepSeq replicates.
+
+    generate_trajectories(tau, theta, method, paras_1, paras_2, t_ime, filename, NreadsI = '1e6', NreadsII = '1e6'):
+        generate in-silico t_ime apart RepSeq samples.
+    """
+
+    def _get_rhof(self, alpha_rho, fmin, freq_nbins=800, freq_dtype='float64'):
 
         '''
         generates power law (power is alpha_rho) clone frequency distribution over 
@@ -1882,7 +2457,7 @@ class Generator:
         logrhovec-=normconst 
         return logrhovec,logfvec
 
-    def get_distsample(self, pmf,Nsamp,dtype='uint32'):
+    def _get_distsample(self, pmf,Nsamp,dtype='uint32'):
         '''
         generates Nsamp index samples of dtype (e.g. uint16 handles up to 65535 indices) from discrete probability mass function pmf.
         Handles multi-dimensional domain. N.B. Output is sorted.
@@ -2016,7 +2591,7 @@ class Generator:
     
         #x0
         integ=np.exp(np.log(Pf_qx0)+logfvec)
-        f_samples_inds= self.get_distsample(dlogf*(integ[1:] + integ[:-1]),num_qx0).flatten()
+        f_samples_inds= self._get_distsample(dlogf*(integ[1:] + integ[:-1]),num_qx0).flatten()
         f_sorted_inds=np.argsort(f_samples_inds)
         f_samples_inds=f_samples_inds[f_sorted_inds] 
         qx0_f_samples=fvec[f_samples_inds]
@@ -2059,7 +2634,7 @@ class Generator:
     
         #0x
         integ=np.exp(np.log(Pf_q0x)+logfvec)
-        f_samples_inds=self.get_distsample(dlogf*(integ[1:] + integ[:-1]),num_q0x).flatten()
+        f_samples_inds=self._get_distsample(dlogf*(integ[1:] + integ[:-1]),num_q0x).flatten()
         f_sorted_inds=np.argsort(f_samples_inds)
         f_samples_inds=f_samples_inds[f_sorted_inds] 
         q0x_f_samples=fvec[f_samples_inds]
@@ -2096,7 +2671,7 @@ class Generator:
     
         #qxx
         integ=np.exp(np.log(Pf_qxx)+logfvec)
-        f_samples_inds=self.get_distsample(dlogf*(integ[1:] + integ[:-1]),num_qxx).flatten()        
+        f_samples_inds=self._get_distsample(dlogf*(integ[1:] + integ[:-1]),num_qxx).flatten()        
         f_sorted_inds=np.argsort(f_samples_inds)
         f_samples_inds=f_samples_inds[f_sorted_inds] 
         qxx_f_samples=fvec[f_samples_inds]
@@ -2176,19 +2751,29 @@ class Generator:
 
 
         """
-        tau : time-scale of the average of the geometric Brownian motion
-        theta : time-scale of the variance of the fluctuations
-        method : can be either 'poisson' for a Poissonian noise model for P(n|f) or 'negative_binomial' for a negative binomiale form of the noise P(n|f)
-        paras_1 : noise model for parameters for first time point
-        paras_2 : noise model for parameters for second time point
-        t_ime : time between two replicates
-        N_reads1: by default, the total number of reads is 1E6
-        N_reads2: by default, the total number of reads is 1E6
-        output_path : name of the directory where you want to save the dataframe
-        filename : name of the filename you are saving your 'in-silico' neutral RepSeq trajectory
+        generate in-silico t_ime apart RepSeq samples.
+        
+        Parameters
+        ----------
+        paras_1  : numpy array
+            parameters of the noise model that has been learnt at time_1
+        paras_2  : numpy array
+            parameters of the noise model that has been learnt at time_2
+        method   : str
+            'negative_binomial' or 'poisson'
+        tau      : float
+            first time-scale parameter of the dynamics
+        theta    : float
+            second time-scale parameter of the dynamics
+        t_ime    : float
+            number of years between both synthetic sampling (between time_1 and time_2)
+        filename : str
+            name of the file in which the dataframe is stored  
 
-
-        The output is a data-frame with 2 vectors associated to the counts of each clone present in the silico samples
+        Returns
+        -------
+        data-frame - csv file
+            the output is a csv file of columns : 'Clone_count_1' (at time_1) 'Clone_count_2' (at time_2) and the frequency counterparts 'Clone_frequency_1' and 'Clone_frequency_2'
         """
 
         np.seterr(divide = 'ignore') 
@@ -2229,7 +2814,7 @@ class Generator:
         #print('alpha : ' + str(alpha))
 
         #1/ Generate log-population at initial time from steady-state distribution + GBM diffusion trajectories for 2 years
-        x_i_LB, x_f_LB, Prop_Matrix_LB, p_ext_LB, results_extinction_LB, time_vec_LB, results_extinction_source_LB, x_source_LB = generator_diffusion_LB(A, B, N_0, t)
+        x_i_LB, x_f_LB, Prop_Matrix_LB, p_ext_LB, results_extinction_LB, time_vec_LB, results_extinction_source_LB, x_source_LB = _generator_diffusion_LB(A, B, N_0, t)
         
         #x_i_LB, x_f_LB, Prop_Matrix, p_ext, results_extinction  = generator_diffusion_LB(B, A, N_0, t)
         N_cells_day_0_LB, N_cells_day_1_LB = np.sum(np.exp(x_i_LB)), np.sum(np.exp(x_f_LB)) + np.sum(np.exp(x_source_LB))  #N_cells_final_LB
@@ -2245,12 +2830,12 @@ class Generator:
 
         if method == 'negative_binomial':
 
-            df_diffusion_LB  = experimental_sampling_diffusion_NegBin(NreadsI, NreadsII, paras, x_i_LB, x_f_LB, N_cells_day_0_LB, N_cells_day_1_LB)
+            df_diffusion_LB  = _experimental_sampling_diffusion_NegBin(NreadsI, NreadsII, paras, x_i_LB, x_f_LB, N_cells_day_0_LB, N_cells_day_1_LB)
             df_diffusion_LB.to_csv(filename + '.csv' , sep= '\t')
 
         elif method == 'poisson': 
 
-            df_diffusion_LB  = experimental_sampling_diffusion_Poisson(NreadsI, NreadsII, x_i_LB, x_f_LB, t, N_cells_day_0_LB, N_cells_day_1_LB)
+            df_diffusion_LB  = _experimental_sampling_diffusion_Poisson(NreadsI, NreadsII, x_i_LB, x_f_LB, t, N_cells_day_0_LB, N_cells_day_1_LB)
             df_diffusion_LB.to_csv(filename + '.csv' , sep= '\t')
 
 
