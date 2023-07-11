@@ -2038,7 +2038,7 @@ class Expansion_Model():
         nfbins = 1200 #Accuracy of the integration
 
 
-        logrhofvec, logfvec = get_rhof(self, alpha_rho, nfbins, fmin, freq_dtype)
+        logrhofvec, logfvec = _get_rhof(self, alpha_rho, nfbins, fmin, freq_dtype)
 
         #Definition of svec
         smax = 25.0     #maximum absolute logfold change value
@@ -2163,7 +2163,7 @@ class Expansion_Model():
         nfbins = 1200 #Accuracy of the integration
 
 
-        logrhofvec, logfvec = self.get_rhof(alpha_rho, nfbins, fmin, freq_dtype)
+        logrhofvec, logfvec = self._get_rhof(alpha_rho, nfbins, fmin, freq_dtype)
 
         #Definition of svec
         smax = 25.0     #maximum absolute logfold change value
@@ -2500,7 +2500,7 @@ class Generator:
             beta_mv= paras[1]
             alpha_mv=paras[2]
     
-        logrhofvec,logfvec = self.get_rhof(alpha,fmin)
+        logrhofvec,logfvec = self._get_rhof(alpha,fmin)
         fvec=np.exp(logfvec)
         dlogf=np.diff(logfvec)/2.
     
