@@ -221,6 +221,7 @@ from typing import Callable, Tuple, Union
 import matplotlib.pyplot as plt
 from matplotlib import cm, colors, colorbar
 import numpy as np
+from numpy.typing import ArrayLike
 import pandas as pd
 import seaborn as sns
 from scipy.special import gammaln
@@ -1344,17 +1345,17 @@ def get_sparserep(df):
 
     return indn1, indn2, sparse_rep_counts, unicountvals_1, unicountvals_2, nreads_1, nreads_2
 
-def _pois_log_likelihoods(x: np.typing.ArrayLike,
-                          mu: np.typing.ArrayLike
+def _pois_log_likelihoods(x: ArrayLike,
+                          mu: ArrayLike
                          ) -> Union[np.float64, np.ndarray]:
     log_likelihoods = -mu + x * np.log(mu) - gammaln(x + 1)
     log_likelihoods[np.isnan(log_likelihoods)] = 0
     return log_likelihoods
 
-def _nbinom_log_likelihoods(x: np.typing.ArrayLike,
-                            r: np.typing.ArrayLike,
-                            log_p: np.typing.ArrayLike,
-                            log_1mp: np.typing.ArrayLike
+def _nbinom_log_likelihoods(x: ArrayLike,
+                            r: ArrayLike,
+                            log_p: ArrayLike,
+                            log_1mp: ArrayLike
                            ) -> Union[np.float64, np.ndarray]:
     ln_binom = gammaln(x + r) - gammaln(r) - gammaln(x + 1)
     return ln_binom + x * log_p + r * log_1mp
