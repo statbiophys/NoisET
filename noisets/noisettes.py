@@ -1280,7 +1280,7 @@ class Data_Process():
                 val=x[1]
             return val
         mergedFrame.loc[:,newnames[3]+suffixes[0]]=mergedFrame.loc[:,[newnames[3]+suffixes[0],newnames[3]+suffixes[1]]].apply(dummy,axis=1) #assigns AA sequence to clones, creates duplicates
-        mergedFrame.drop(newnames[3]+suffixes[1], 1,inplace=True) #removes duplicates
+        mergedFrame.drop(newnames[3]+suffixes[1], axis = 1,inplace=True) #removes duplicates
         mergedFrame.rename(columns = {newnames[3]+suffixes[0]:newnames[3]}, inplace = True)
         mergedFrame=mergedFrame[[newname+suffix for newname in newnames[:2] for suffix in suffixes]+[newnames[2],newnames[3]]]
         filterout=((mergedFrame.Clone_count_1<mincount) & (mergedFrame.Clone_count_2==0)) | ((mergedFrame.Clone_count_2<mincount) & (mergedFrame.Clone_count_1==0)) #has effect only if mincount>0
