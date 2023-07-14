@@ -1437,48 +1437,6 @@ def _log_pn_f_2(unicounts: np.ndarray,
     mean_n = nreads * np.exp(logfvec)
     return _pois_log_likelihoods(unicounts, mean_n[:, None])
 
-def _get_pn1n2(paras: np.ndarray,
-               sparse_rep: Tuple[np.ndarray, int],
-               log_pn_f_func: Callable,
-               nfbins: int = 1200,
-               freq_dtype: type = np.float64
-              ) -> np.ndarray:
-    """
-    Tool to compute likelihood of the noise model. It is not useful for the user.
-    """
-    alpha = paras[0]
-    fmin = paras[-1]
-
-    logrhofvec, logfvec, normconst, dlogfby2 = _get_rhof(alpha, fmin, nfbins, freq_dtype)
-    logfvec_tmp = deepcopy(logfvec)
-
-    (indn1, indn2, _, unicountvals_1, unicountvals_2,
-     nreads_1, nreads_2) = sparse_rep
-
-    log_pn1_f = log_pn_f_func(unicountvals_1, nreads_1, logfvec_tmp, paras)
-    log_pn2_f = log_pn_f_func(unicountvals_2, nreads_2, logfvec_tmp, paras)
-
-    # Compute P(0,0) for the normalization constraint
-    integ = np.exp(logrhofvec + log_pn2_f[:, 0] + log_pn1_f[:, 0] + logfvec)
-    pn0n0 = np.dot(dlogfby2, integ[1:] + integ[:-1])
-
-    # TODO Handle infinities.
-    integ = np.exp(log_pn1_f[:, indn1] + log_pn2_f[:, indn2] + (logfvec + logrhofvec)[:, None])
-    pn1n2 = np.dot(dlogfby2, integ[1:] + integ[:-1])
-    pn1n2 /= 1. - pn0n0  # renormalize
-    return pn1n2
-
-def _avg_log_likelihood_pn1n2(paras: np.ndarray,
-                              sparse_rep: Tuple[np.ndarray, int],
-                              log_pn_f_func: Callable,
-                              nfbins: int = 1200,
-                              freq_dtype: Union[str, type] = np.float64
-                             ) -> np.float64:
-    _, _, sparse_rep_counts, _, _, _, _ = sparse_rep
-    pn1n2 = _get_pn1n2(paras, sparse_rep, log_pn_f_func, nfbins, freq_dtype)
-    log_pn1n2 = np.where(pn1n2 > 0, np.log(pn1n2), 0)
-    avg_log_likelihood = -np.dot(sparse_rep_counts, log_pn1n2) / np.sum(sparse_rep_counts)
-    return avg_log_likelihood
 
 #===============================Noise-Model===================================================================
 ### Noise Model
@@ -1508,21 +1466,24 @@ class NoiseModel():
                  num_frequency_bins: int = 1200,
                  freq_dtype: Union[str, type] = np.float64
                 ) -> None:
-        self.nfbins = num_frequency_bins
+        self.nfbins = int(num_frequency_bins)
         self.freq_dtype = freq_dtype
 
-    def get_sparserep(self,
-                      df: pd.DataFrame,
-                      count_1_col: str = 'Clone_count_1',
-                      count_2_col: str = 'Clone_count_2'
-                     ) -> Tuple[np.ndarray, int]:
-        return get_sparserep(df, count_1_col, count_2_col)
+    def _process_dataframe(self,
+                           df: pd.DataFrame,
+                           count_1_col: str = 'Clone_count_1',
+                           count_2_col: str = 'Clone_count_2'
+                          ) -> Tuple[np.ndarray, int]:
+        self.sparse_rep = get_sparserep(df, count_1_col, count_2_col)
+
+        (self.indn1, self.indn2, self.sparse_rep_counts,
+        self.unicountvals_1, self.unicountvals_2, self.nreads_1,
+        self.nreads_2) = self.sparse_rep
+
+        self.num_clones_obs = np.sum(self.sparse_rep_counts)
 
     def _callback(self,
                   paras: np.ndarray,
-                  nparas: int,
-                  sparse_rep: Tuple[np.ndarray, int],
-                  noise_model: int,
                   log_pn_f_func: Callable
                  ) -> None:
         '''prints iteration info. called by scipy.minimize. Not useful for the user.'''
@@ -1532,14 +1493,48 @@ class NoiseModel():
         global Loss_function
         print(''.join(['{0:d} ']+['{'+str(it)+':3.17f} ' for it in range(1,len(paras)+1)]).format(*([curr_iter]+list(paras))))
         #print ('{' + str(len(paras)+1) + ':3.6f}'.format( [self.get_Pn1n2(paras, sparse_rep, acq_model_type)]))
-        Loss_function = _avg_log_likelihood_pn1n2(paras, sparse_rep, log_pn_f_func, self.nfbins, self.freq_dtype)
+        Loss_function = self._avg_log_likelihood_pn1n2(paras, log_pn_f_func)
         print(Loss_function)
         curr_iter += 1
+
+    def _get_pn1n2(self,
+                   paras: np.ndarray,
+                   log_pn_f_func: Callable,
+                  ) -> np.ndarray:
+        """
+        Tool to compute likelihood of the noise model. It is not useful for the user.
+        """
+        alpha = paras[0]
+        fmin = paras[-1]
+
+        logrhofvec, logfvec, normconst, dlogfby2 = _get_rhof(alpha, fmin, self.nfbins, self.freq_dtype)
+        logfvec_tmp = deepcopy(logfvec)
+
+        log_pn1_f = log_pn_f_func(self.unicountvals_1, self.nreads_1, logfvec_tmp, paras)
+        log_pn2_f = log_pn_f_func(self.unicountvals_2, self.nreads_2, logfvec_tmp, paras)
+
+        # Compute P(0,0) for the normalization constraint
+        integ = np.exp(logrhofvec + log_pn2_f[:, 0] + log_pn1_f[:, 0] + logfvec)
+        pn0n0 = np.dot(dlogfby2, integ[1:] + integ[:-1])
+
+        # TODO Handle infinities.
+        integ = np.exp(log_pn1_f[:, self.indn1] + log_pn2_f[:, self.indn2] + (logfvec + logrhofvec)[:, None])
+        pn1n2 = np.dot(dlogfby2, integ[1:] + integ[:-1])
+        pn1n2 /= 1. - pn0n0  # renormalize
+        return pn1n2
+
+    def _avg_log_likelihood_pn1n2(self,
+                                  paras: np.ndarray,
+                                  log_pn_f_func: Callable,
+                                 ) -> np.float64:
+        pn1n2 = self._get_pn1n2(paras, log_pn_f_func)
+        log_pn1n2 = np.where(pn1n2 > 0, np.log(pn1n2), 0)
+        avg_log_likelihood = -np.dot(self.sparse_rep_counts, log_pn1n2) / self.num_clones_obs
+        return avg_log_likelihood
 
     # Constraints for the Null-Model, no filtered 
     def _nullmodel_constr_fn(self,
                              paras: np.ndarray,
-                             sparse_rep: Tuple[np.ndarray, int],
                              log_pn_f_func: Callable,
                              constr_type: int
                             ) -> Union[np.float64, Tuple[np.float64]]:
@@ -1547,8 +1542,6 @@ class NoiseModel():
         returns either or both of the two level-set functions: log<f>-log(1/N), with N=Nclones/(1-P(0,0)) and log(Z_f), with Z_f=N<f>_{n+n'=0} + sum_i^Nclones <f>_{f|n,n'}
         not useful for the user
         """
-        indn1, indn2, sparse_rep_counts, unicountvals_1, unicountvals_2, nreads_1, nreads_2 = sparse_rep
-
         alpha = paras[0]  # power law exponent
         fmin = paras[-1] # true minimal frequency 
 
@@ -1557,29 +1550,30 @@ class NoiseModel():
         integ = np.exp(logrhofvec + 2 * logfvec)
         avgf_ps = np.dot(dlogfby2, integ[:-1] + integ[1:])
 
-        log_pn1_f = log_pn_f_func(unicountvals_1, nreads_1, logfvec, paras)
-        log_pn2_f = log_pn_f_func(unicountvals_2, nreads_2, logfvec, paras)
+        log_pn1_f = log_pn_f_func(self.unicountvals_1, self.nreads_1, logfvec, paras)
+        log_pn2_f = log_pn_f_func(self.unicountvals_2, self.nreads_2, logfvec, paras)
 
         integ = np.exp(log_pn1_f[:, 0] + log_pn2_f[:, 0] + logrhofvec + logfvec)
         Pn0n0 = np.dot(dlogfby2, integ[1:] + integ[:-1])
         logPnng0 = np.log(1 - Pn0n0)
-        avgf_null_pair = np.exp(logPnng0 - np.log(np.sum(sparse_rep_counts)))
+        log_sum_sparse_counts = np.log(self.num_clones_obs)
+        avgf_null_pair = np.exp(logPnng0 - log_sum_sparse_counts)
 
         C1 = np.log(avgf_ps) - np.log(avgf_null_pair)
 
         integ = np.exp(log_pn1_f[:, 0] + log_pn2_f[:, 0] + logrhofvec + 2 * logfvec)
         log_avgf_n0n0 = np.log(np.dot(dlogfby2, integ[1:] + integ[:-1]))
 
-        log_integ = log_pn1_f[:, indn1] + log_pn2_f[:, indn2] + (logrhofvec + logfvec)[:, None]
+        log_integ = log_pn1_f[:, self.indn1] + log_pn2_f[:, self.indn2] + (logrhofvec + logfvec)[:, None]
         integ = np.exp(log_integ)
-        log_Pn1n2 = np.log(np.einsum('i,ij->j', dlogfby2, integ[1:] + integ[:-1]))
+        log_Pn1n2 = np.log(np.dot(dlogfby2, integ[1:] + integ[:-1]))
         integ = np.exp(log_integ + logfvec[:, None])
         tmp = deepcopy(log_Pn1n2)
         tmp[tmp == -np.Inf] = np.inf  # since subtracted in next line
-        avgf_n1n2 = np.exp(np.log(np.einsum('i,ij->j', dlogfby2, integ[1:] + integ[:-1])) - tmp)
-        log_sumavgf = np.log(np.dot(sparse_rep_counts, avgf_n1n2))
+        avgf_n1n2 = np.exp(np.log(np.dot(dlogfby2, integ[1:] + integ[:-1])) - tmp)
+        log_sumavgf = np.log(np.dot(self.sparse_rep_counts, avgf_n1n2))
 
-        logNclones = np.log(np.sum(sparse_rep_counts)) - logPnng0
+        logNclones = log_sum_sparse_counts - logPnng0
         Z = np.exp(logNclones + np.log(Pn0n0) + log_avgf_n0n0) + np.exp(log_sumavgf)
 
         C2 = np.log(Z)
@@ -1602,7 +1596,8 @@ class NoiseModel():
                          tol: float = 1e-6,
                          maxiter: int = 200,
                          count_1_col: str = 'Clone_count_1',
-                         count_2_col: str = 'Clone_count_2'
+                         count_2_col: str = 'Clone_count_2',
+                         bounds: Tuple[Tuple[np.float64]] = None
                         ) -> Tuple[OptimizeResult, float]:
         """
         Parameters
@@ -1631,19 +1626,22 @@ class NoiseModel():
             The value of the constraint at the solution.
 
         """
-        sparse_rep = self.get_sparserep(df, count_1_col, count_2_col)
+        self._process_dataframe(df, count_1_col, count_2_col)
 
         if noise_model == 0:
             parameter_labels = ['alph_rho', 'beta', 'alpha', 'm_total', 'fmin']
-            bounds = [(-6, -0.5), (1e-8, 5), (-2, 5), (2, 15), (-15, -4)]
+            if bounds is None:
+                bounds = [(-6, -0.5), (1e-8, 5), (-2, 5), (2, 15), (-15, -4)]
             log_pn_f_func = _log_pn_f_0
         elif noise_model == 1:
             parameter_labels = ['alph_rho', 'beta', 'alpha', 'fmin']
-            bounds = [(-6, -0.5), (1e-8, 5), (-2, 5), (-15, -4)]
+            if bounds is None:
+                bounds = [(-6, -0.5), (1e-8, 5), (-2, 5), (-15, -4)]
             log_pn_f_func = _log_pn_f_1
         elif noise_model == 2:
             parameter_labels = ['alph_rho', 'fmin']
-            bounds = [(-6, -0.5), (-15, -4)]
+            if bounds is None:
+                bounds = [(-6, -0.5), (-15, -4)]
             log_pn_f_func = _log_pn_f_2
         else:
             raise ValueError('noise_model must be 0, 1, or 2.')
@@ -1652,11 +1650,10 @@ class NoiseModel():
 
         condict = {'type': 'eq',
                    'fun': self._nullmodel_constr_fn,
-                   'args': (sparse_rep, log_pn_f_func, constr_type)}
+                   'args': (log_pn_f_func, constr_type)}
 
-        partialobjfunc = partial(_avg_log_likelihood_pn1n2, sparse_rep=sparse_rep,
-                                 log_pn_f_func=log_pn_f_func,
-                                 nfbins=self.nfbins, freq_dtype=self.freq_dtype)
+        partialobjfunc = partial(self._avg_log_likelihood_pn1n2,
+                                 log_pn_f_func=log_pn_f_func)
 
         header = ['Iter'] + parameter_labels
         print(''.join(['{' + str(it) + ':9s} ' for it in range(len(init_paras) + 1)]).format(*header))
@@ -1664,16 +1661,14 @@ class NoiseModel():
         global curr_iter
         curr_iter = 1
         options = {'ftol': tol, 'disp': True, 'maxiter': maxiter}
-        callbackp = partial(self._callback, nparas=len(init_paras),
-                            sparse_rep=sparse_rep, noise_model=noise_model,
+        callbackp = partial(self._callback,
                             log_pn_f_func=log_pn_f_func)
 
         outstruct = minimize(partialobjfunc, init_paras, method='SLSQP',
                              callback=callbackp, constraints=condict,
                              options=options, bounds=bounds)
 
-        constr_value = self._nullmodel_constr_fn(outstruct.x, sparse_rep,
-                                                 log_pn_f_func, constr_type)
+        constr_value = self._nullmodel_constr_fn(outstruct.x, log_pn_f_func, constr_type)
 
         if noise_model < 1:
             parameter_labels = ['alph_rho', 'beta', 'alpha', 'm_total', 'fmin']
@@ -1731,9 +1726,7 @@ class NoiseModel():
         else:
             raise ValueError('noise_model must be 0, 1, or 2.')
 
-        sparse_rep = self.get_sparserep(df)
-
-        _, _, sparse_rep_counts, _, _, nreads_1, nreads_2 = sparse_rep
+        self._process_dataframe(df)
 
         alpha = paras[0]
         fmin = paras[-1]
@@ -1743,16 +1736,14 @@ class NoiseModel():
         logfvec_tmp = deepcopy(logfvec)
 
         zero_arr = np.zeros(1, dtype=np.int64)
-        log_pn1_f = log_pn_f_func(zero_arr, nreads_1, logfvec_tmp, paras).ravel()
-        log_pn2_f = log_pn_f_func(zero_arr, nreads_2, logfvec_tmp, paras).ravel()
+        log_pn1_f = log_pn_f_func(zero_arr, self.nreads_1, logfvec_tmp, paras).ravel()
+        log_pn2_f = log_pn_f_func(zero_arr, self.nreads_2, logfvec_tmp, paras).ravel()
 
         # Compute P(0,0) for the normalization constraint
         integ = np.exp(logrhofvec + log_pn1_f + log_pn2_f + logfvec)
         Pn0n0 = np.dot(dlogfby2, integ[1:] + integ[:-1])
 
-        N_obs = np.sum(sparse_rep_counts)
-
-        return int(N_obs / (1 - Pn0n0))
+        return int(self.num_clones_obs / (1 - Pn0n0))
 
 # For backwards compatibility. Should be removed.
 class Noise_Model(NoiseModel):
@@ -1760,7 +1751,7 @@ class Noise_Model(NoiseModel):
 
 #============================================Differential expression =============================================================
 
-class ExpansionModel():
+class ExpansionModel(NoiseModel):
 
     """
     A class used to build an object associated to methods in order to select significant expanding or
@@ -1775,34 +1766,38 @@ class ExpansionModel():
     """
     def __init__(self,
                  num_frequency_bins: int = 1200,
-                 freq_dtype: Union[str, type] = np.float64
+                 freq_dtype: Union[str, type] = np.float64,
+                 num_grid_points: int = 50,
+                 fraction_responding_lim: Tuple[np.float64] = (1e-3, 0.99),
+                 log_fold_change_lim: Tuple[np.float64] = (0.01, 5),
+                 smax: np.float64 = 25,
+                 s_step: np.float64 = 0.1,
+                 refine_global_opt: bool = True
                 ) -> None:
-        self.nfbins = num_frequency_bins
+        self.nfbins = int(num_frequency_bins)
         self.freq_dtype = freq_dtype
+        self.num_grid_points = num_grid_points
+        self.alpvec = np.logspace(*np.log10(fraction_responding_lim), num_grid_points)
+        self.sbarvec = np.linspace(*log_fold_change_lim, num_grid_points)
+        self.smax = smax
+        self.s_step = s_step
+        self.refine_global_opt = refine_global_opt
 
-    def get_sparserep(self,
-                      df: pd.DataFrame,
-                      count_1_col: str = 'Clone_count_1',
-                      count_2_col: str = 'Clone_count_2'
-                     ) -> Tuple[np.ndarray, int]:
-        return get_sparserep(df, count_1_col, count_2_col)
-
-
-    def _get_Ps(self, alp,sbar,smax,stp):
-        '''
+    def _get_ps(self, alp, sbar, smax, stp):
+        """
         generates symmetric exponential distribution over log fold change
         with effect size sbar and nonresponding fraction 1-alp at s=0.
         computed over discrete range of s from -smax to smax in steps of size stp
-        '''
-        lamb=-stp/sbar
-        smaxt=round(smax/stp)
-        s_zeroind=int(smaxt)
-        Z=2*(np.exp((smaxt+1)*lamb)-1)/(np.exp(lamb)-1)-1
-        Ps=alp*np.exp(lamb*np.fabs(np.arange(-smaxt,smaxt+1)))/Z
-        Ps[s_zeroind]+=(1-alp)
-        return Ps
+        """
+        lamb = -stp / sbar
+        smaxt = round(smax / stp)
+        s_zeroind = int(smaxt)
+        norm = 2 * (np.exp((smaxt + 1) * lamb) - 1) / (np.exp(lamb) - 1) - 1
+        ps = alp * np.exp(lamb * np.fabs(np.arange(-smaxt , smaxt + 1))) / norm
+        ps[s_zeroind] += (1 - alp)
+        return ps
 
-    def _get_Ps_mesh(self, alpmesh, sbarmesh, smax, s_step):
+    def _get_ps_mesh(self, alpmesh, sbarmesh, smax, s_step):
         '''
         generates symmetric exponential distribution over log fold change
         with effect size sbar and nonresponding fraction 1-alp at s=0.
@@ -1811,145 +1806,19 @@ class ExpansionModel():
         lamb = -s_step / sbarmesh
         smaxt = round(smax / s_step)
         s_zeroind = int(smaxt)
-        Z = 2 * (np.exp((smaxt + 1) * lamb) - 1) / (np.exp(lamb) - 1) - 1
-        Ps = (alpmesh[:, :, None]
+        norm = 2 * (np.exp((smaxt + 1) * lamb) - 1) / (np.exp(lamb) - 1) - 1
+        ps = (alpmesh[:, :, None]
               * np.exp(lamb[:, :, None] * np.fabs(np.arange(-smaxt, smaxt + 1)))
-              / Z[:, :, None])
-        Ps[:, :, s_zeroind] += (1 - alpmesh)
-        return Ps
+              / norm[:, :, None])
+        ps[:, :, s_zeroind] += (1 - alpmesh)
+        return ps
 
-    def _callbackFdiffexpr(self, Xi): #case dependent
-        '''prints iteration info. called scipy.minimize'''
-
-        print('{0: 3.6f}   {1: 3.6f}   '.format(Xi[0], Xi[1])+'\n')
-
-
-    def _learning_dynamics_expansion_polished(self, df, paras_1, paras_2,  noise_model):
-        """
-        function to infer the expansion mode parameters - not usable by the user.
-        """
-
-        indn1,indn2,sparse_rep_counts,unicountvals_1,unicountvals_2,nreads_1,nreads_2 = self.get_sparserep(df)
-
-        alpha_rho = paras_1[0]
-        fmin = np.power(10,paras_1[-1])
-        freq_dtype = 'float64'
-        nfbins = 1200 #Accuracy of the integration
-
-
-        logrhofvec, logfvec, _, _ = _get_rhof(alpha_rho, fmin, nfbins, freq_dtype)
-
-        #Definition of svec
-        smax = 25.0     #maximum absolute logfold change value
-        s_step = 0.1
-        s_0 = -1
-
-        s_step_old= s_step
-        logf_step= logfvec[1] - logfvec[0] #use natural log here since f2 increments in increments in exp().  
-        f2s_step= int(round(s_step/logf_step)) #rounded number of f-steps in one s-step
-        s_step= float(f2s_step)*logf_step
-        smax= s_step*(smax/s_step_old)
-        svec= s_step*np.arange(0,int(round(smax/s_step)+1))
-        svec= np.append(-svec[1:][::-1],svec)
-
-        smaxind=(len(svec)-1)/2
-        f2s_step=int(round(s_step/logf_step)) #rounded number of f-steps in one s-step
-        logfmin=logfvec[0 ]-f2s_step*smaxind*logf_step
-        logfmax=logfvec[-1]+f2s_step*smaxind*logf_step
-
-        logfvecwide = np.linspace(logfmin,logfmax,len(logfvec)+2*smaxind*f2s_step) #a wider domain for the second frequency f2=f1*exp(s)
-
-        # Compute P(n1|f) and P(n2|f), each in an iteration of the following loop
-
-        for it in range(2):
-            if it == 0:
-                unicounts=unicountvals_1
-                logfvec_tmp=deepcopy(logfvec)
-                Nreads = nreads_1
-                paras = paras_1
-            else:
-                unicounts=unicountvals_2
-                logfvec_tmp=deepcopy(logfvecwide) #contains s-shift for sampled data method
-                Nreads = nreads_2
-                paras = paras_2
-            if it == 0:
-                log_pn1_f = self._get_logPn_f( unicounts, Nreads, logfvec_tmp, noise_model, paras)
-
-            else:
-                log_pn2_f = self._get_logPn_f(unicounts, Nreads, logfvec_tmp, noise_model, paras)
-
-        #for the trapezoid method
-        dlogfby2=np.diff(logfvec)/2
-
-        # Computing P(n1,n2|f,s)
-        Pn1n2_s=np.zeros((len(svec), len(unicountvals_1), len(unicountvals_2)))
-
-        for s_it,s in enumerate(svec):
-            for it,(n1_it, n2_it) in enumerate(zip(indn1,indn2)):
-                integ = np.exp(logrhofvec+log_pn2_f[f2s_step*s_it:(f2s_step*s_it+len(logfvec)),n2_it]+log_pn1_f[:,n1_it]+ logfvec )
-                Pn1n2_s[s_it, n1_it, n2_it] = np.dot(dlogfby2,integ[1:] + integ[:-1])
-
-
-        Pn0n0_s = np.zeros(svec.shape)
-        for s_it,s in enumerate(svec):
-            integ=np.exp(log_pn1_f[:,0]+log_pn2_f[f2s_step*s_it:(f2s_step*s_it+len(logfvec)),0]+logrhofvec+logfvec)
-            Pn0n0_s[s_it]=np.dot(dlogfby2,integ[1:]+integ[:-1])
-
-
-        N_obs = np.sum(sparse_rep_counts)
-        print("N_obs: " + str(N_obs))
-
-
-        def cost(PARAS):
-
-            alp = PARAS[0]
-            sbar = PARAS[1]
-
-            Ps = _get_Ps(self,alp,sbar,smax,s_step)
-            Pn0n0=np.dot(Pn0n0_s,Ps)
-            Pn1n2_ps=np.sum(Pn1n2_s*Ps[:,np.newaxis,np.newaxis],0)
-            Pn1n2_ps/=1-Pn0n0
-            print(Pn0n0)
-
-
-
-            Energy = - np.dot(sparse_rep_counts/float(N_obs),np.where(Pn1n2_ps[indn1,indn2]>0,np.log(Pn1n2_ps[indn1,indn2]),0))
-
-            return Energy
-
-    #--------------------------Compute-the-grid-----------------------------------------
-
-        print('Calculation Surface : \n')
-        st = time.time()
-
-        npoints = 20 #to be chosen by the user 
-        alpvec = np.logspace(-3,np.log10(0.99), npoints)
-        sbarvec = np.linspace(0.01,5, npoints)
-
-        LSurface =np.zeros((len(sbarvec),len(alpvec)))
-        for i in range(len(sbarvec)):
-            for j in range(len(alpvec)):
-                LSurface[i, j]=  - cost([alpvec[j], sbarvec[i]])
-
-        alpmesh, sbarmesh = np.meshgrid(alpvec, sbarvec)
-        a,b = np.where(LSurface == np.max(LSurface))
-        print("--- %s seconds ---" % (time.time() - st))
-
-
-    #------------------------------Optimization----------------------------------------------
-
-        optA = alpmesh[a[0],b[0]]
-        optB = sbarmesh[a[0],b[0]]
-
-        print('polish parameter estimate from '+ str(optA)+' '+str(optB))
-        initparas=(optA,optB)
-
-
-        outstruct = minimize(cost, initparas, method='SLSQP', callback=_callbackFdiffexpr, tol=1e-6,options={'ftol':1e-8 ,'disp': True,'maxiter':300})
-
-        return outstruct.x, Pn1n2_s, Pn0n0_s, svec
-
-    def _learning_dynamics_expansion(self, sparse_rep, paras_1, paras_2, noise_model, display_plot=False):
+    def _learning_dynamics_expansion(self,
+                                     paras_1: np.ndarray,
+                                     paras_2: np.ndarray,
+                                     noise_model: int,
+                                     display_plot: bool=False
+                                    ) -> Tuple[np.ndarray]:
         """
         function to infer the expansion mode parameters - not usable by the user.
         """
@@ -1962,72 +1831,76 @@ class ExpansionModel():
         else:
             raise ValueError('noise_model must be 0, 1, or 2.')
 
-        indn1, indn2, sparse_rep_counts, unicountvals_1, unicountvals_2, nreads_1, nreads_2 = sparse_rep
-
         alpha_rho = paras_1[0]
         fmin = paras_1[-1]
 
         logrhofvec, logfvec, _, dlogfby2 = _get_rhof(alpha_rho, fmin,
                                                      self.nfbins, self.freq_dtype)
 
-        #Definition of svec
-        smax = 25.0     #maximum absolute logfold change value
-        s_step = 0.1
-        s_0 = -1
+        logf_step = logfvec[1] - logfvec[0] #use natural log here since f2 increments in increments in exp().
+        f2s_step = round(self.s_step / logf_step) #rounded number of f-steps in one s-step
+        s_step = f2s_step * logf_step
+        smax = s_step * (self.smax / self.s_step)
+        svec = s_step * np.arange(0, round(smax / s_step) + 1)
+        svec = np.concatenate((-svec[1:][::-1], svec))
 
-        s_step_old= s_step
-        logf_step= logfvec[1] - logfvec[0] #use natural log here since f2 increments in increments in exp().  
-        f2s_step= int(round(s_step/logf_step)) #rounded number of f-steps in one s-step
-        s_step= float(f2s_step)*logf_step
-        smax= s_step*(smax/s_step_old)
-        svec= s_step*np.arange(0,int(round(smax/s_step)+1))
-        svec= np.append(-svec[1:][::-1],svec)
+        len_s = len(svec)
+        smaxind = (len_s - 1) / 2
+        logfmin = logfvec[0] - f2s_step * smaxind * logf_step
+        logfmax = logfvec[-1] + f2s_step * smaxind * logf_step
 
-        smaxind=(len(svec)-1)/2
-        f2s_step=int(round(s_step/logf_step)) #rounded number of f-steps in one s-step
-        logfmin=logfvec[0 ]-f2s_step*smaxind*logf_step
-        logfmax=logfvec[-1]+f2s_step*smaxind*logf_step
+        logfwide_num_bins = int(self.nfbins + 2 * smaxind * f2s_step)
+        logfvecwide = np.linspace(logfmin, logfmax, logfwide_num_bins)
 
-        logfvecwide = np.linspace(logfmin,logfmax,int(len(logfvec)+2*smaxind*f2s_step)) #a wider domain for the second frequency f2=f1*exp(s)
+        log_pn1_f = log_pn_f_func(self.unicountvals_1, self.nreads_1, logfvec, paras_1)
+        log_pn2_f = log_pn_f_func(self.unicountvals_2, self.nreads_2, logfvecwide, paras_2)
 
-        # Compute P(n1|f) and P(n2|f), each in an iteration of the following loop
-        log_pn1_f = log_pn_f_func(unicountvals_1, nreads_1, logfvec, paras_1)
-        log_pn2_f = log_pn_f_func(unicountvals_2, nreads_2, logfvecwide, paras_2)
+        pclonepair_s = np.zeros((len_s, len(self.indn1)))
+        logrho_add_logf= (logrhofvec + logfvec)[:, None]
+        const_part = logrho_add_logf + log_pn1_f[:, self.indn1]
+        for s_it in range(len_s):
+            start_idx = s_it * f2s_step
+            end_idx = start_idx + self.nfbins
+            integ = np.exp(const_part + log_pn2_f[start_idx:end_idx, self.indn2])
+            pclonepair_s[s_it] = np.dot(dlogfby2, integ[1:] + integ[:-1])
+        pn1n2_s = np.zeros((len_s, len(self.unicountvals_1), len(self.unicountvals_2)))
+        pn1n2_s[:, self.indn1, self.indn2] = pclonepair_s
 
-        # Computing P(n1,n2|f,s)
-        Pn1n2_s=np.zeros((len(svec), len(unicountvals_1), len(unicountvals_2)))
+        to_repeat = np.arange(0, self.nfbins, dtype=np.int64)
+        arange_len = len(to_repeat)
+        to_add = np.arange(0, len(log_pn2_f) - self.nfbins + f2s_step, f2s_step)
+        idxs = (np.repeat(to_repeat, len_s).reshape(arange_len, len_s)) + to_add
+        log_pn2_f_large = log_pn2_f[idxs.T, 0]
+        integ = np.exp(logrho_add_logf.T + log_pn2_f_large + log_pn1_f[:, 0])
+        pn0n0_s = np.dot(integ[:, 1:] + integ[:, :-1], dlogfby2)
 
-        for s_it,s in enumerate(svec):
-            for it,(n1_it, n2_it) in enumerate(zip(indn1,indn2)):
-                integ = np.exp(logrhofvec+log_pn2_f[f2s_step*s_it:(f2s_step*s_it+len(logfvec)),n2_it]+log_pn1_f[:,n1_it]+ logfvec )
-                Pn1n2_s[s_it, n1_it, n2_it] = np.dot(dlogfby2,integ[1:] + integ[:-1])
+        def negative_log_likelihood(params: np.ndarray
+                                   ) -> np.float64:
+            """
+            Compute the negative log likelihood for expansion.
 
+            Parameters
+            ----------
+            params : np.ndarray
+                The first entry is the fraction of responding clones
+                and the second is their average effect size.
 
-        Pn0n0_s = np.zeros(svec.shape)
-        for s_it,s in enumerate(svec):
-            integ=np.exp(log_pn1_f[:,0]+log_pn2_f[f2s_step*s_it:(f2s_step*s_it+len(logfvec)),0]+logrhofvec+logfvec)
-            Pn0n0_s[s_it]=np.dot(dlogfby2,integ[1:]+integ[:-1])
+            Returns
+            -------
+            np.float64
+                The negative log likelihood.
+            """
+            alp = params[0]
+            sbar = params[1]
 
-        N_obs = np.sum(sparse_rep_counts)
-        print("N_obs: " + str(N_obs))
-
-
-        def cost(PARAS):
-
-            alp = PARAS[0]
-            sbar = PARAS[1]
-
-            Ps = self._get_Ps(alp,sbar,smax,s_step)
-            Pn0n0=np.dot(Pn0n0_s,Ps)
-            Pn1n2_ps=np.sum(Pn1n2_s*Ps[:,np.newaxis,np.newaxis],0)
-            Pn1n2_ps/=1-Pn0n0
-            #print(Pn0n0)
-
-
-
-            Energy = - np.dot(sparse_rep_counts/float(N_obs),np.where(Pn1n2_ps[indn1,indn2]>0,np.log(Pn1n2_ps[indn1,indn2]),0))
-
-            return Energy
+            ps = self._get_ps(alp, sbar, smax, s_step)
+            pn0n0 = np.dot(pn0n0_s, ps)
+            pn1n2_ps = np.tensordot(ps, pn1n2_s, [0, 0])
+            pn1n2_ps /= 1 - pn0n0
+            log_pn1n2_ps = np.where(pn1n2_ps[self.indn1, self.indn2] > 0,
+                                    np.log(pn1n2_ps[self.indn1, self.indn2]),
+                                    0)
+            return -np.dot(self.sparse_rep_counts, log_pn1n2_ps) / self.num_clones_obs
 
         def create_landscape(alpha_mesh: np.ndarray,
                              sbar_mesh: np.ndarray
@@ -2040,147 +1913,124 @@ class ExpansionModel():
 
             Parameters
             ----------
-            alpha_mesh : np.ndarray
+            alpha_mesh : numpy.ndarray
                 A meshgrid of alpha values which corresponds with sbar_mesh.
-            sbar_mesh : np.ndarray
+                alpha gives the fraction of clones which are responding.
+            sbar_mesh : numpy.ndarray
                 A meshgrid of sbar values which corresponds with alpha_mesh.
-            """
-            ps = self._get_Ps_mesh(alpha_mesh, sbar_mesh, smax, s_step)
-            pn0n0 = np.tensordot(ps, Pn0n0_s, [2, 0])
-            pn1n2_ps = np.tensordot(ps, Pn1n2_s, [2, 0])
-            pn1n2_ps /= 1 - pn0n0[:, :, None, None]
-            log_pn1n2_ps = np.where(pn1n2_ps[:, :, indn1, indn2] > 0,
-                                    np.log(pn1n2_ps[:, :, indn1, indn2]),
-                                    0)
-            frequencies = sparse_rep_counts / float(N_obs)
-            energy = np.tensordot(log_pn1n2_ps, frequencies, [2, 0])
-            return energy
+                sbar gives the typical effect size of the responding clones.
 
-    #--------------------------Compute-the-grid-----------------------------------------
+            Returns
+            -------
+            landscape : numpy.ndarray
+                The log likelihood landscape for alpha and sbar.
+            """
+            ps = self._get_ps_mesh(alpha_mesh, sbar_mesh, smax, s_step)
+            pn0n0 = np.tensordot(ps, pn0n0_s, [2, 0])
+            pn1n2_ps = np.tensordot(ps, pn1n2_s, [2, 0])
+            pn1n2_ps /= 1 - pn0n0[:, :, None, None]
+            log_pn1n2_ps = np.where(pn1n2_ps[:, :, self.indn1, self.indn2] > 0,
+                                    np.log(pn1n2_ps[:, :, self.indn1, self.indn2]),
+                                    0)
+            frequencies = self.sparse_rep_counts / self.num_clones_obs
+            landscape = np.tensordot(log_pn1n2_ps, frequencies, [2, 0])
+            return landscape
 
         print('Calculation Surface : \n')
-#        st = time.time()
 
-        npoints = 50 #to be chosen by the user 
-        alpvec = np.logspace(-3,np.log10(0.99), npoints)
-        sbarvec = np.linspace(0.01,5, npoints)
-
-        alpmesh, sbarmesh = np.meshgrid(alpvec, sbarvec)
+        alpmesh, sbarmesh = np.meshgrid(self.alpvec, self.sbarvec)
         st = time.time()
-        LSurface = create_landscape(alpmesh, sbarmesh)
+        landscape = create_landscape(alpmesh, sbarmesh)
         print(f'--- {time.time() - st} seconds ---')
 
+        max_idx_sbar, max_idx_alp = np.unravel_index(np.argmax(landscape),
+                                                     landscape.shape)
+        opt_params = np.array([self.alpvec[max_idx_alp],
+                               self.sbarvec[max_idx_sbar]])
+
+        if self.refine_global_opt:
+            outstruct = minimize(negative_log_likelihood,
+                                 opt_params,
+                                 method='BFGS')
+            opt_params = outstruct.x
+
+        return opt_params, pn1n2_s, pn0n0_s, svec
+#
     #---------------------------Plot-the-grid-------------------------------------------
-        if display_plot:
+#        if display_plot:
+#
+#            fig, ax =plt.subplots(1, figsize=(10,8))
+#
+#
+#            a,b = np.where(LSurface == np.max(LSurface))
+#
+#            ax.contour(alpmesh, sbarmesh, LSurface, linewidths=1, colors='k', linestyles = 'solid')
+#            plt.contourf(alpmesh, sbarmesh, LSurface, 20, cmap = 'viridis', alpha= 0.8)
+#
+#            xmax = alpmesh[a[0],b[0]]
+#            ymax = sbarmesh[a[0],b[0]]
+#            text= r"$ alpha={:.3f}, s={:.3f} $".format(xmax, ymax)
+#            bbox_props = dict(boxstyle="square,pad=0.3", fc="w", ec="k", lw=0.72)
+#            arrowprops=dict(arrowstyle="->",connectionstyle="angle,angleA=0,angleB=80")
+#            kw = dict(xycoords='data',textcoords="axes fraction",
+#                arrowprops=arrowprops, bbox=bbox_props, ha="right", va="top")
+#            plt.annotate(text, xy=(xmax, ymax), xytext=(0.94,0.96), **kw)
+#            plt.xlabel(r'$ \alpha, \ size \ of \ the \ repertoire \ that \ answers \ to \ the \ vaccine $') 
+#            plt.ylabel(r'$ s_{bar}, \ characteristic \ expansion \ decrease $')
+#            plt.xscale('log')
+#            plt.yscale('log')
+#            plt.grid()
+#            plt.title(r'$Grid \ Search \ graph \ for \ \alpha \ and \ s_{bar} \ parameters. $')
+#            plt.colorbar()
 
-            fig, ax =plt.subplots(1, figsize=(10,8))
-
-
-            a,b = np.where(LSurface == np.max(LSurface))
-
-            ax.contour(alpmesh, sbarmesh, LSurface, linewidths=1, colors='k', linestyles = 'solid')
-            plt.contourf(alpmesh, sbarmesh, LSurface, 20, cmap = 'viridis', alpha= 0.8)
-
-            xmax = alpmesh[a[0],b[0]]
-            ymax = sbarmesh[a[0],b[0]]
-            text= r"$ alpha={:.3f}, s={:.3f} $".format(xmax, ymax)
-            bbox_props = dict(boxstyle="square,pad=0.3", fc="w", ec="k", lw=0.72)
-            arrowprops=dict(arrowstyle="->",connectionstyle="angle,angleA=0,angleB=80")
-            kw = dict(xycoords='data',textcoords="axes fraction",
-                arrowprops=arrowprops, bbox=bbox_props, ha="right", va="top")
-            plt.annotate(text, xy=(xmax, ymax), xytext=(0.94,0.96), **kw)
-            plt.xlabel(r'$ \alpha, \ size \ of \ the \ repertoire \ that \ answers \ to \ the \ vaccine $') 
-            plt.ylabel(r'$ s_{bar}, \ characteristic \ expansion \ decrease $')
-            plt.xscale('log')
-            plt.yscale('log')
-            plt.grid()
-            plt.title(r'$Grid \ Search \ graph \ for \ \alpha \ and \ s_{bar} \ parameters. $')
-            plt.colorbar()
-
-        return LSurface, Pn1n2_s, Pn0n0_s, svec
-
-
-    def _save_table(self, outpath, svec, Ps,Pn1n2_s, Pn0n0_s,  subset, unicountvals_1_d, unicountvals_2_d, indn1_d, indn2_d, print_expanded, pthresh, smedthresh):
-        '''
-        takes learned diffexpr model, Pn1n2_s*Ps, computes posteriors over (n1,n2) pairs, and writes to file a table of data with clones as rows and columns as measures of thier posteriors
-        print_expanded=True orders table as ascending by , else descending
-        pthresh is the threshold in 'p-value'-like (null hypo) probability, 1-P(s>0|n1_i,n2_i), where i is the row (i.e. the clone) n.b. lower null prob implies larger probability of expansion
-        smedthresh is the threshold on the posterior median, below which clones are discarded
-
-        not usable by the user.
-        '''
-
-        Psn1n2_ps=Pn1n2_s*Ps[:,np.newaxis,np.newaxis]
+    def _compute_p_values_and_s_features(self,
+                                         params: np.ndarray,
+                                         pn1n2_s: np.ndarray,
+                                         svec: np.ndarray,
+                                         df: pd.DataFrame,
+                                         count_1_col: str = 'Clone_count_1',
+                                         count_2_col: str = 'Clone_count_2',
+                                         ci_width: float = 0.95
+                                        ):
+        ps = self._get_ps(*params, self.smax, self.s_step)
+        unnorm_posterior = pn1n2_s * ps[:,np.newaxis,np.newaxis]
 
         #compute marginal likelihood (neglect renormalization , since it cancels in conditional below) 
-        Pn1n2_ps=np.sum(Psn1n2_ps,0)
+        marginal_likelihood = np.sum(unnorm_posterior, 0)
 
-        Ps_n1n2ps=Pn1n2_s*Ps[:,np.newaxis,np.newaxis]/Pn1n2_ps[np.newaxis,:,:]
+        #Ps_n1n2ps=Pn1n2_s*Ps[:,np.newaxis,np.newaxis]/Pn1n2_ps[np.newaxis,:,:]
+        posterior = unnorm_posterior / marginal_likelihood[np.newaxis,:,:]
         #compute cdf to get p-value to threshold on to reduce output size
-        cdfPs_n1n2ps=np.cumsum(Ps_n1n2ps,0)
+        posterior_cdf = np.cumsum(posterior, 0)
 
+        mapped = df.groupby([count_1_col, count_2_col]).apply(lambda x: x.index)
+        arr_map = np.zeros(len(df), dtype=np.int64)
+        for i, v in enumerate(mapped.values):
+            arr_map[v] = i
 
-        def dummy(row,cdfPs_n1n2ps,unicountvals_1_d,unicountvals_2_d):
-            '''
-            when applied to dataframe, generates 'p-value'-like (null hypo) probability, 1-P(s>0|n1_i,n2_i), where i is the row (i.e. the clone)
-            '''
-            return cdfPs_n1n2ps[np.argmin(np.fabs(svec)),row['Clone_count_1']==unicountvals_1_d,row['Clone_count_2']==unicountvals_2_d][0]
-        dummy_part=partial(dummy,cdfPs_n1n2ps=cdfPs_n1n2ps,unicountvals_1_d=unicountvals_1_d,unicountvals_2_d=unicountvals_2_d)
+        df['pval'] = posterior_cdf[np.argmin(np.fabs(svec))][self.indn1, self.indn2][arr_map]
 
-        cdflabel=r'$1-P(s>0)$'
-        subset[cdflabel]=subset.apply(dummy_part, axis=1)
-        subset=subset[subset[cdflabel]<pthresh].reset_index(drop=True)
+        ci_lower = (1 - ci_width) / 2
+        ci_arr = [ci_lower, 0.5, 1 - ci_lower]
 
-        #go from clone count pair (n1,n2) to index in unicountvals_1_d and unicountvals_2_d
-        data_pairs_ind_1=np.zeros((len(subset),),dtype=int)
-        data_pairs_ind_2=np.zeros((len(subset),),dtype=int)
-        for it in range(len(subset)):
-            data_pairs_ind_1[it]=np.where(int(subset.iloc[it].Clone_count_1)==unicountvals_1_d)[0]
-            data_pairs_ind_2[it]=np.where(int(subset.iloc[it].Clone_count_2)==unicountvals_2_d)[0]
-        #posteriors over data clones
-        Ps_n1n2ps_datpairs=Ps_n1n2ps[:,data_pairs_ind_1,data_pairs_ind_2]
+        posterior_pairs = posterior[:, self.indn1, self.indn2]
+        posterior_cdf_pairs = posterior_cdf[:, self.indn1, self.indn2]
+        df['s_mean'] = np.dot(svec, posterior_pairs)[arr_map]
+        df['s_max'] = svec[np.argmax(posterior_pairs, 0)[arr_map]]
+        for ci_val, label in zip(ci_arr, ['low', 'med', 'high']):
+            df[f's_{label}'] = svec[np.argmax(posterior_cdf_pairs > ci_val, 0)][arr_map]
 
-        #compute posterior metrics
-        mean_est=np.zeros((len(subset),))
-        max_est= np.zeros((len(subset),))
-        slowvec= np.zeros((len(subset),))
-        smedvec= np.zeros((len(subset),))
-        shighvec=np.zeros((len(subset),))
-        pval=0.025 #double-sided comparison statistical test
-        pvalvec=[pval,0.5,1-pval] #bound criteria defining slow, smed, and shigh, respectively
-        for it,column in enumerate(np.transpose(Ps_n1n2ps_datpairs)):
-            mean_est[it]=np.sum(svec*column)
-            max_est[it]=svec[np.argmax(column)]
-            forwardcmf=np.cumsum(column)
-            backwardcmf=np.cumsum(column[::-1])[::-1]
-            inds=np.where((forwardcmf[:-1]<pvalvec[0]) & (forwardcmf[1:]>=pvalvec[0]))[0]
-            slowvec[it]=np.mean(svec[inds+np.ones((len(inds),),dtype=int)])  #use mean in case there are two values
-            inds=np.where((forwardcmf>=pvalvec[1]) & (backwardcmf>=pvalvec[1]))[0]
-            smedvec[it]=np.mean(svec[inds])
-            inds=np.where((forwardcmf[:-1]<pvalvec[2]) & (forwardcmf[1:]>=pvalvec[2]))[0]
-            shighvec[it]=np.mean(svec[inds+np.ones((len(inds),),dtype=int)])
+        return df
 
-        colnames=(r'$\bar{s}$',r'$s_{max}$',r'$s_{3,high}$',r'$s_{2,med}$',r'$s_{1,low}$')
-        for it,coldata in enumerate((mean_est,max_est,shighvec,smedvec,slowvec)):
-            subset.insert(0,colnames[it],coldata)
-        oldcolnames=( 'AACDR3',  'ntCDR3', 'Clone_count_1', 'Clone_count_2', 'Clone_fraction_1', 'Clone_fraction_2')
-        newcolnames=('CDR3_AA', 'CDR3_nt',        r'$n_1$',        r'$n_2$',           r'$f_1$',           r'$f_2$')
-        subset=subset.rename(columns=dict(zip(oldcolnames, newcolnames)))
-
-        #select only clones whose posterior median pass the given threshold
-        subset=subset[subset[r'$s_{2,med}$']>smedthresh]
-
-        print("writing to: "+outpath)
-        if print_expanded:
-            subset=subset.sort_values(by=cdflabel,ascending=True)
-            strout='expanded'
-        else:
-            subset=subset.sort_values(by=cdflabel,ascending=False)
-            strout='contracted'
-        subset.to_csv(outpath+'top_'+strout+'.csv',sep='\t',index=False)
-
-    def expansion_table(self, outpath, paras_1, paras_2, df, noise_model, pval_threshold, smed_threshold):
-
+    def expansion_table(self,
+                        df: pd.DataFrame,
+                        noise_model: int,
+                        paras_1: np.ndarray,
+                        paras_2: np.ndarray,
+                        count_1_col: str = 'Clone_count_1',
+                        count_2_col: str = 'Clone_count_2',
+                        ci_width: float = 0.95
+                       ) -> pd.DataFrame:
         '''
         generate the table of clones that have been significantly detected to be responsive to an acute stimuli.
 
@@ -2210,22 +2060,12 @@ class ExpansionModel():
             the output is a csv file of columns : $s_{1-low}$, $s_{2-med}$, $s_{3-high}$, $s_{max}$, $\bar{s}$, $f_1$, $f_2$, $n_1$, $n_2$, 'CDR3_nt', 'CDR3_AA' and '$p$-value'
         '''
 
-        sparse_rep = self.get_sparserep(df)
-        L_surface, Pn1n2_s_d, Pn0n0_s_d, svec = self._learning_dynamics_expansion(sparse_rep, paras_1, paras_2, noise_model)
-        npoints= 50 # same as in learning_dynamics_expansion
-        smax = 25.0
-        s_step = 0.1
-        alpvec = np.logspace(-3,np.log10(0.99), npoints)
-        sbarvec = np.linspace(0.01,5, npoints)
-        maxinds=np.unravel_index(np.argmax(L_surface),np.shape(L_surface))
-        optsbar=sbarvec[maxinds[0]]
-        optalp=alpvec[maxinds[1]]
-        optPs= self._get_Ps(optalp,optsbar,smax,s_step)
-        pval_expanded = True
-
-        indn1,indn2,sparse_rep_counts, unicountvals_1, unicountvals_2, nreads_1, nreads_2 = sparse_rep
-
-        self._save_table(outpath, svec, optPs, Pn1n2_s_d, Pn0n0_s_d,  df, unicountvals_1, unicountvals_2, indn1, indn2, pval_expanded, pval_threshold, smed_threshold)
+        self._process_dataframe(df)
+        opt_params, pn1n2_s_d, pn0n0_s_d, svec = self._learning_dynamics_expansion(paras_1,
+                                                                                   paras_2,
+                                                                                   noise_model)
+        return self._compute_p_values_and_s_features(opt_params, pn1n2_s_d, svec,
+                                                     df, count_1_col, count_2_col, ci_width)
 
 # For backwards compatibility. Should be removed.
 class Expansion_Model(ExpansionModel):
