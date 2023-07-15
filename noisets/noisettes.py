@@ -221,10 +221,9 @@ from typing import Callable, Tuple, Union
 import matplotlib.pyplot as plt
 from matplotlib import cm, colors, colorbar
 import numpy as np
-from numpy.typing import ArrayLike
 import pandas as pd
 import seaborn as sns
-from scipy.special import gammaln
+from scipy.special import betaln, gammaln
 from scipy.stats import nbinom
 from scipy.stats import poisson
 from scipy.stats import rv_discrete
@@ -1293,44 +1292,39 @@ def get_sparserep(df: pd.DataFrame,
                   count_2_col: str = 'Clone_count_2'
                  ) -> Tuple[np.ndarray, int]:
     """
-    Tranforms {(n1,n2)} data stored in pandas dataframe to a sparse 1D representation.
-    unicountvals_1(2) are the unique values of n1(2).
-    sparse_rep_counts gives the counts of unique pairs.
-    ndn1(2) is the index of unicountvals_1(2) giving the value of n1(2) in that unique pair.
-    len(indn1)=len(indn2)=len(sparse_rep_counts)
+    Extract the unique ordered clone pair counts, the unique counts that
+    appear in each column, and other condensed information.
 
+    This representation of the data allows for efficient computation.
 
     Parameters
     ----------
-    df : pandas data frame
-        data-frame which is the output of the method .import_data() for one Data_Process instance.
-        these data-frame should give the list of TCR clones present in two replicates RepSeq samples
-        associated to their clone frequencies and clone abundances in the first and second replicate.
-
+    df : pandas.DatFrame
+        The input DataFrame.
+    count_1_col : str, default 'Clone_count_1'
+        The column containing the counts at one datapoint.
+    count_2_col : str, default 'Clone_count_2'
+        The column containing the counts at the other datapoint.
 
     Returns
     -------
-    indn1
-        numpy array list of indexes of all values of unicountvals_1
-
-    indn2
-        numpy array list of indexes of all values of unicountvals_2
-
-    sparse_rep_counts
-        numpy array, # of clones having the read counts pair {(n1,n2)}
-
-    unicountvals_1
-        numpy array list of unique counts values present in the first sample in df[clone_count_1]
-
-    unicountvals_2
-        numpy array list of unique counts values present in the second sample in df[clone_count_2]
-
-    Nreads1
-        float, total number of counts/reads in the first sample referred in df by "_1"
-
-    Nreads2
-        float, total number of counts/reads in the second sample referred in df by "_2"
-
+    indn1 : numpy.ndarray
+        The indices which map the unique counts in count_1_col back to the unique
+        clone pairs.
+    indn2 : numpy.ndarray
+        The indices which map the unique counts in count_2_col back to the unique
+        clone pairs.
+    sparse_rep_counts : int
+        The amounts of each pair of ordered clone counts that are present
+        in the two columns.
+    unicountvals_1 : numpy.ndarray
+        An array of the unique counts present in count_1_col.
+    unicountvals_2 : numpy.ndarray
+        An array of the unique counts present in count_2_col.
+    nreads_1 : int
+        The total number of clone counts in count_1_col.
+    nreads_2 : int
+        The total number of clone counts in count_2_col.
     """
     clone_counts = df.groupby([count_1_col, count_2_col]).size()
     sparse_rep_counts = clone_counts.values
@@ -1341,39 +1335,111 @@ def get_sparserep(df: pd.DataFrame,
     nreads_2 = df[count_2_col].sum()
     return indn1, indn2, sparse_rep_counts, unicountvals_1, unicountvals_2, nreads_1, nreads_2
 
-def _pois_log_likelihoods(x: ArrayLike,
-                          mu: ArrayLike
-                         ) -> Union[np.float64, np.ndarray]:
+def _pois_log_likelihoods(x: np.ndarray,
+                          mu: np.ndarray
+                         ) -> np.ndarray:
+    """
+    Compute Poisson log likelihoods.
+
+    Parameters
+    ----------
+    x : numpy.ndarray
+        Array of data on which the log likelihood will be computed.
+    mu : numpy.ndarray
+        Array of Poisson rates.
+
+    Returns
+    -------
+    log_likelihoods : numpy.ndarray
+        Poisson log likelihoods.
+    """
     log_likelihoods = -mu + x * np.log(mu) - gammaln(x + 1)
     log_likelihoods[np.isnan(log_likelihoods)] = 0
     return log_likelihoods
 
-def _nbinom_log_likelihoods(x: ArrayLike,
-                            r: ArrayLike,
-                            log_p: ArrayLike,
-                            log_1mp: ArrayLike
-                           ) -> Union[np.float64, np.ndarray]:
-    ln_binom = gammaln(x + r) - gammaln(r) - gammaln(x + 1)
-    return ln_binom + x * log_p + r * log_1mp
+def _nbinom_log_likelihoods(x: np.ndarray,
+                            r: np.ndarray,
+                            log_p: np.ndarray,
+                            log_1mp: np.ndarray
+                           ) -> np.ndarray:
+    """
+    Compute negative binomial log likelihoods.
+
+    This function requires log(p) and log(1 - p) to allow for accurate
+    computations when p or (1 - p) are within floating-point precision
+    of 1 or 0. Additionally, scipy.special.betaln is used in lieu of
+    scipy.special.gammaln to compute the binomial coefficient to avoid
+    numerical instability when x or r is much larger than the other.
+
+    Parameters
+    ----------
+    x : numpy.ndarray
+        Array of data on which the log likelihood will be computed.
+        In this parameterization, x represents the number of successes.
+        x need not be an array of integers though.
+    r : numpy.ndarray
+        In this parameterization, r can be thought of as the number of failures
+        until the experiment is stopped. However, r need not be integers.
+    log_p : numpy.ndarray
+        The logarithm of the probability of a success.
+    log_1mp : numpy.ndarray
+        The logarithm of a the probability of a failure.
+
+    Returns
+    -------
+    log_likelihoods : numpy.ndarray
+        Negative binomial log likelihoods.
+    """
+    ln_binom = -betaln(x, r) - np.log(x)
+    r_times_log_1mp = r * log_1mp
+    log_likelihoods = ln_binom + x * log_p + r_times_log_1mp
+    where_0 = x == 0
+    log_likelihoods[:, where_0] = r_times_log_1mp
+    return log_likelihoods
 
 def _get_rhof(alpha_rho: float,
               fmin: float,
               nfbins: int = 1200,
-              freq_dtype: type = np.float64
+              freq_dtype: Union[str, type] = np.float64
              ) -> Tuple[np.ndarray]:
     """
-    generates power law (power is alpha_rho) clone frequency distribution over
-    freq_nbins discrete logarithmically spaced frequences between fmin and 1 of dtype freq_dtype
-    Outputs log probabilities obtained at log frequencies
+    Calculate the power law clone frequency distribution.
+
+    The upper bound of the frequency distribution is fixed at 1.
+
+    Parameters
+    ----------
+    alpha_rho : float
+        The exponent parameter of the power law.
+    fmin : float
+        The log10 minimum frequency that will be used as the lower bound
+        for integration. I.e., the minimum frequency is 10**fmin.
+    nfbins : int, default 1200
+        The number of bins used to generate the frequency distribution.
+    freq_dtype : str or type, default np.float64
+        The dtype used to create the distribution.
+
+    Returns
+    -------
+    logrhovec : numpy.ndarray
+        The log probabilities of the frequencies.
+    logfvec : numpy.ndarray
+        The log frequencies, which are taken as the support of the distribution.
+    normconst : float
+        The logarithm of the normalization constant of the distribution.
+    d_logfvec_div_2 : numpy.ndarray
+        The spacing between the entries in logfvec (np.diff(logfvec)) divided
+        by 2, in anticipation of being used as the differential for trapezoidal
+        integration throughout analyses.
     """
-    logfvec = np.linspace(fmin, 0, nfbins)
+    logfvec = np.linspace(fmin, 0, nfbins, dtype=freq_dtype)
     logfvec = logfvec * np.log(10)
     d_logfvec_div_2 = np.diff(logfvec) / 2
     logrhovec = logfvec * alpha_rho
     integ = np.exp(logrhovec + logfvec, dtype=freq_dtype)
-    normconst = np.log(np.dot(d_logfvec_div_2, integ[1:] + integ[:-1]))
-    logrhovec -= normconst
-    return logrhovec, logfvec, normconst, d_logfvec_div_2
+    lognormconst = np.log(np.dot(d_logfvec_div_2, integ[1:] + integ[:-1]))
+    logrhovec -= lognormconst
+    return logrhovec, logfvec, lognormconst, d_logfvec_div_2
 
 def _log_pn_f_0(unicounts: np.ndarray,
                 nreads: int,
@@ -1398,21 +1464,12 @@ def _log_pn_f_0(unicounts: np.ndarray,
     mvec=np.arange(m_cellmax + 1)
 
     pois_probs = np.exp(_pois_log_likelihoods(unicounts, (mvec * r_c)[:, None]))
+
     # Remove rows which have probabilities below machine precision to avoid
     # unnecessary calculations.
     keep = np.any(pois_probs, axis=1)
     pois_probs = pois_probs[keep]
-
-    beta_mv, alpha_mv = paras[1], paras[2]
-
-    mean_m = m_total * np.exp(logfvec)
-    log_mean = np.log(mean_m)
-    log_mean_multiplier = np.log(beta_mv) + (alpha_mv - 1) * log_mean
-    log_1mp = -np.logaddexp(0, log_mean_multiplier)
-    log_p = log_mean_multiplier + log_1mp
-    r = np.exp(log_mean - log_mean_multiplier)
-    nbinom_probs = np.exp(_nbinom_log_likelihoods(mvec[keep], r[:, None],
-                                                  log_p[:, None], log_1mp[:, None]))
+    nbinom_probs = np.exp(_log_pn_f_1(mvec[keep], m_total, logfvec, paras))
     return np.log(nbinom_probs @ pois_probs)
 
 def _log_pn_f_1(unicounts: np.ndarray,
@@ -1436,10 +1493,6 @@ def _log_pn_f_2(unicounts: np.ndarray,
                ) -> np.ndarray:
     mean_n = nreads * np.exp(logfvec)
     return _pois_log_likelihoods(unicounts, mean_n[:, None])
-
-
-#===============================Noise-Model===================================================================
-### Noise Model
 
 class NoiseModel():
 
@@ -2059,7 +2112,7 @@ class ExpansionModel(NoiseModel):
         data-frame - csv file
             the output is a csv file of columns : $s_{1-low}$, $s_{2-med}$, $s_{3-high}$, $s_{max}$, $\bar{s}$, $f_1$, $f_2$, $n_1$, $n_2$, 'CDR3_nt', 'CDR3_AA' and '$p$-value'
         '''
-
+        df = df.copy()
         self._process_dataframe(df)
         opt_params, pn1n2_s_d, pn0n0_s_d, svec = self._learning_dynamics_expansion(paras_1,
                                                                                    paras_2,
