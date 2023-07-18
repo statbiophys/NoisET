@@ -121,7 +121,7 @@ One can also generalte healthy RepSeq samples dynamics using the noise model whi
 To generate synthetic TCR RepSeq data replicates having chosen sampling noise characteristics, use the command `noiset-nullgenerator`
 
  ```console
- $ noiset-nullgenerator --(noise-model) --nullpara 'NULLPARAS' --nreads_1 float --nreads_2 float --Nclones float --output 'SYNTHETICDATA'
+ $ noiset-nullgenerator --(noise-model) --nullpara 'NULLPARAS' --NreadsI float --NreadsII float --Nclones float --output 'SYNTHETICDATA'
  ```
 
 #### 1/ Choice of noise model:
@@ -138,7 +138,7 @@ For each P(n|f), a set of parameters is learned.
 for `--Poisson`.
 
 #### 3/ Sequencing properties of data:
-- `--nreads_1 NNNN`: total number  of reads in first replicate - it should match the actual data. In the example below, it is the sum of 'Clone count' in 'Q1_0_F1_.txt.gz'.
+- `--NreadsI NNNN`: total number  of reads in first replicate - it should match the actual data. In the example below, it is the sum of 'Clone count' in 'Q1_0_F1_.txt.gz'.
 - `--Nreads2 NNNN`: total number  of reads in second replicate - it should match the actual data. In the example below, it is the sum of 'Clone count' in 'Q1_0_F2_.txt.gz'.
 - `--Nclones NNNN`: total number of clones in union of two replicates - it should match the actual data. In the example below, it is the number of clones present in both replicates : 'Q1_0_F1_.txt.gz' and 'Q1_0_F2_.txt.gz'.
 
@@ -147,9 +147,9 @@ for `--Poisson`.
 
 At the command prompt, type
  ```console
- $ noiset-nullgenerator --NB --nullpara 'data_examples/nullpara1.txt' --nreads_1 829578 --nreads_2 954389 --Nclones 776247 --output 'test'
+ $ noiset-nullgenerator --NB --nullpara 'data_examples/nullpara1.txt' --NreadsI 829578 --NreadsII 954389 --Nclones 776247 --output 'test'
  ```
- Running this line, you create a 'synthetic_test.csv' file with four columns : 'Clone_count_1', 'Clone_count_2', 'Clone_fraction_1', 'Clone_fraction_2', resctively synthetic read counts and frequencies that you would have found in an experimental sample of same learned parameters 'nullpara1.txt', 'nreads_1', 'nreads_2' and 'Nclones'.
+ Running this line, you create a 'synthetic_test.csv' file with four columns : 'Clone_count_1', 'Clone_count_2', 'Clone_fraction_1', 'Clone_fraction_2', resctively synthetic read counts and frequencies that you would have found in an experimental sample of same learned parameters 'nullpara1.txt', 'NreadsI', 'NreadsII' and 'Nclones'.
 
 ## 3/ Detect responding clones:
 
@@ -1314,7 +1314,7 @@ def get_sparserep(df: pd.DataFrame,
     indn2 : numpy.ndarray
         The indices which map the unique counts in count_2_col back to the unique
         clone pairs.
-    sparse_rep_counts : int
+    sparse_rep_counts : numpy.ndarray
         The amounts of each pair of ordered clone counts that are present
         in the two columns.
     unicountvals_1 : numpy.ndarray
@@ -1356,6 +1356,48 @@ def _pois_log_likelihoods(x: np.ndarray,
     log_likelihoods = -mu + x * np.log(mu) - gammaln(x + 1)
     log_likelihoods[np.isnan(log_likelihoods)] = 0
     return log_likelihoods
+
+def _nbinom_log_likelihoods_legacy(x: np.ndarray,
+                                   r: np.ndarray,
+                                   log_p: np.ndarray,
+                                   log_1mp: np.ndarray
+                                  ) -> np.ndarray:
+    """
+    Compute negative binomial log likelihoods.
+
+    This function requires log(p) and log(1 - p) to allow for accurate
+    computations when p or (1 - p) are within floating-point precision
+    of 1 or 0. It also computes the factorials exactly at the expense
+    of many computations.
+
+    Parameters
+    ----------
+    x : numpy.ndarray
+        Array of data on which the log likelihood will be computed.
+        In this parameterization, x represents the number of successes.
+        x need not be an array of integers though.
+    r : numpy.ndarray
+        In this parameterization, r can be thought of as the number of failures
+        until the experiment is stopped. However, r need not be integers.
+    log_p : numpy.ndarray
+        The logarithm of the probability of a success.
+    log_1mp : numpy.ndarray
+        The logarithm of a the probability of a failure.
+
+    Returns
+    -------
+    log_likelihoods : numpy.ndarray
+        Negative binomial log likelihoods.
+    """
+    xmax = np.max(x[-1])
+    arange = np.arange(xmax + 1, dtype=np.float64)
+    partial_log_likelihoods = np.log(1 + (r[:, None] - 1) / arange) + log_p[:, None]
+    partial_log_likelihoods[:, 0] = r * log_1mp
+    log_likelihoods = np.cumsum(partial_log_likelihoods, 1)
+    r_is_0 = r == 0
+    log_likelihoods[r_is_0, 1:] = -np.inf
+    log_likelihoods[r_is_0, 0] = 0
+    return log_likelihoods[:, x]
 
 def _nbinom_log_likelihoods(x: np.ndarray,
                             r: np.ndarray,
@@ -1472,11 +1514,10 @@ def _log_pn_f_0(unicounts: np.ndarray,
     nbinom_probs = np.exp(_log_pn_f_1(mvec[keep], m_total, logfvec, paras))
     return np.log(nbinom_probs @ pois_probs)
 
-def _log_pn_f_1(unicounts: np.ndarray,
-                nreads: int,
-                logfvec: np.ndarray,
-                paras: np.ndarray
-               ) -> np.ndarray:
+def _nbinom_method_of_moments(nreads: int,
+                              logfvec: np.ndarray,
+                              paras: np.ndarray
+                             ) -> Tuple[np.ndarray]:
     beta_mv, alpha_mv = paras[1], paras[2]
     mean_n = nreads * np.exp(logfvec)
     log_mean = np.log(mean_n)
@@ -1484,6 +1525,22 @@ def _log_pn_f_1(unicounts: np.ndarray,
     log_1mp = -np.logaddexp(0, log_mean_multiplier)
     log_p = log_mean_multiplier + log_1mp
     r = np.exp(log_mean - log_mean_multiplier)
+    return r, log_p, log_1mp
+
+def _log_pn_f_1_legacy(unicounts: np.ndarray,
+                       nreads: int,
+                       logfvec: np.ndarray,
+                       paras: np.ndarray
+                      ) -> np.ndarray:
+    r, log_p, log_1mp = _nbinom_method_of_moments(nreads, logfvec, paras)
+    return _nbinom_log_likelihoods_legacy(unicounts, r, log_p, log_1mp)
+
+def _log_pn_f_1(unicounts: np.ndarray,
+                nreads: int,
+                logfvec: np.ndarray,
+                paras: np.ndarray
+               ) -> np.ndarray:
+    r, log_p, log_1mp = _nbinom_method_of_moments(nreads, logfvec, paras)
     return _nbinom_log_likelihoods(unicounts, r[:, None], log_p[:, None], log_1mp[:, None])
 
 def _log_pn_f_2(unicounts: np.ndarray,
@@ -1870,7 +1927,8 @@ class ExpansionModel(NoiseModel):
                                      paras_1: np.ndarray,
                                      paras_2: np.ndarray,
                                      noise_model: int,
-                                     display_plot: bool=False
+                                     legacy_code: bool = False,
+                                     display_plot: bool = False
                                     ) -> Tuple[np.ndarray]:
         """
         function to infer the expansion mode parameters - not usable by the user.
@@ -1878,7 +1936,10 @@ class ExpansionModel(NoiseModel):
         if noise_model == 0:
             log_pn_f_func = _log_pn_f_0
         elif noise_model == 1:
-            log_pn_f_func = _log_pn_f_1
+            if legacy_code:
+                log_pn_f_func = _log_pn_f_1_legacy
+            else:
+                log_pn_f_func = _log_pn_f_1
         elif noise_model == 2:
             log_pn_f_func = _log_pn_f_2
         else:
@@ -1989,7 +2050,7 @@ class ExpansionModel(NoiseModel):
             landscape = np.tensordot(log_pn1n2_ps, frequencies, [2, 0])
             return landscape
 
-        print('Calculation Surface : \n')
+        print('Calculation Surface:')
 
         alpmesh, sbarmesh = np.meshgrid(self.alpvec, self.sbarvec)
         st = time.time()
@@ -2007,7 +2068,7 @@ class ExpansionModel(NoiseModel):
                                  method='BFGS')
             opt_params = outstruct.x
 
-        return opt_params, pn1n2_s, pn0n0_s, svec
+        return opt_params, landscape, pn1n2_s, pn0n0_s, svec
 #
     #---------------------------Plot-the-grid-------------------------------------------
 #        if display_plot:
@@ -2043,35 +2104,43 @@ class ExpansionModel(NoiseModel):
                                          df: pd.DataFrame,
                                          count_1_col: str = 'Clone_count_1',
                                          count_2_col: str = 'Clone_count_2',
-                                         ci_width: float = 0.95
+                                         ci_width: float = 0.95,
+                                         suffix: str = '',
+                                         contraction: bool = False,
                                         ):
         ps = self._get_ps(*params, self.smax, self.s_step)
         unnorm_posterior = pn1n2_s * ps[:,np.newaxis,np.newaxis]
-
-        #compute marginal likelihood (neglect renormalization , since it cancels in conditional below) 
         marginal_likelihood = np.sum(unnorm_posterior, 0)
-
-        #Ps_n1n2ps=Pn1n2_s*Ps[:,np.newaxis,np.newaxis]/Pn1n2_ps[np.newaxis,:,:]
         posterior = unnorm_posterior / marginal_likelihood[np.newaxis,:,:]
-        #compute cdf to get p-value to threshold on to reduce output size
-        posterior_cdf = np.cumsum(posterior, 0)
+        posterior_pairs = posterior[:, self.indn1, self.indn2]
+        posterior_cdf = np.cumsum(posterior_pairs, 0)
+        backward_cdf = posterior[::-1, self.indn1, self.indn2].cumsum(0)
 
         mapped = df.groupby([count_1_col, count_2_col]).apply(lambda x: x.index)
         arr_map = np.zeros(len(df), dtype=np.int64)
         for i, v in enumerate(mapped.values):
             arr_map[v] = i
 
-        df['pval'] = posterior_cdf[np.argmin(np.fabs(svec))][self.indn1, self.indn2][arr_map]
+        svec *= (-1)**contraction
+        where_s_eq_0 = np.argmin(np.fabs(svec))
+        where_s_eq_0_backward = np.argmin(np.fabs(svec[::-1]))
+
+        if suffix is not None:
+            suffix = '_' + suffix
+
+        df[f'pval{suffix}'] = posterior_cdf[where_s_eq_0, arr_map]
+        df[f'pval{suffix}_backward'] = backward_cdf[where_s_eq_0_backward, arr_map]
+
+        df[f's_mean{suffix}'] = np.dot(svec, posterior_pairs)[arr_map]
+        df[f's_max{suffix}'] = svec[np.argmax(posterior_pairs, 0)[arr_map]]
 
         ci_lower = (1 - ci_width) / 2
         ci_arr = [ci_lower, 0.5, 1 - ci_lower]
+        if contraction:
+            ci_arr = ci_arr[::-1]
 
-        posterior_pairs = posterior[:, self.indn1, self.indn2]
-        posterior_cdf_pairs = posterior_cdf[:, self.indn1, self.indn2]
-        df['s_mean'] = np.dot(svec, posterior_pairs)[arr_map]
-        df['s_max'] = svec[np.argmax(posterior_pairs, 0)[arr_map]]
         for ci_val, label in zip(ci_arr, ['low', 'med', 'high']):
-            df[f's_{label}'] = svec[np.argmax(posterior_cdf_pairs > ci_val, 0)][arr_map]
+            df[f's_{label}{suffix}'] = svec[np.argmax(posterior_cdf > ci_val, 0)][arr_map]
 
         return df
 
@@ -2082,7 +2151,8 @@ class ExpansionModel(NoiseModel):
                         paras_2: np.ndarray,
                         count_1_col: str = 'Clone_count_1',
                         count_2_col: str = 'Clone_count_2',
-                        ci_width: float = 0.95
+                        ci_width: float = 0.95,
+                        legacy_code: bool = False
                        ) -> pd.DataFrame:
         '''
         generate the table of clones that have been significantly detected to be responsive to an acute stimuli.
@@ -2113,12 +2183,29 @@ class ExpansionModel(NoiseModel):
             the output is a csv file of columns : $s_{1-low}$, $s_{2-med}$, $s_{3-high}$, $s_{max}$, $\bar{s}$, $f_1$, $f_2$, $n_1$, $n_2$, 'CDR3_nt', 'CDR3_AA' and '$p$-value'
         '''
         df = df.copy()
-        self._process_dataframe(df)
-        opt_params, pn1n2_s_d, pn0n0_s_d, svec = self._learning_dynamics_expansion(paras_1,
-                                                                                   paras_2,
-                                                                                   noise_model)
-        return self._compute_p_values_and_s_features(opt_params, pn1n2_s_d, svec,
-                                                     df, count_1_col, count_2_col, ci_width)
+
+        # Expansion analysis.
+        self._process_dataframe(df, count_1_col=count_1_col, count_2_col=count_2_col)
+        (opt_params, landscape,
+         pn1n2_s_d, pn0n0_s_d,
+         svec) = self._learning_dynamics_expansion(paras_1, paras_2, noise_model, legacy_code)
+        print('expand opt params', list(opt_params))
+        df = self._compute_p_values_and_s_features(opt_params, pn1n2_s_d, svec,
+                                                   df, count_1_col, count_2_col,
+                                                   ci_width, suffix='expand')
+
+        # Contraction analysis.
+        self._process_dataframe(df, count_1_col=count_2_col, count_2_col=count_1_col)
+        (opt_params, landscape,
+         pn1n2_s_d, pn0n0_s_d,
+         svec) = self._learning_dynamics_expansion(paras_2, paras_1, noise_model, legacy_code)
+        print('contract opt params', list(opt_params))
+        df = self._compute_p_values_and_s_features(opt_params, pn1n2_s_d, svec,
+                                                   df, count_2_col, count_1_col,
+                                                   ci_width, suffix='contract',
+                                                   contraction=True)
+
+        return df
 
 # For backwards compatibility. Should be removed.
 class Expansion_Model(ExpansionModel):
