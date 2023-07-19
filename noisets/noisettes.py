@@ -2004,7 +2004,7 @@ class ExpansionModel(NoiseModel):
             np.float64
                 The negative log likelihood.
             """
-            alp = params[0]
+            alp = 1 / (1 + np.exp(-params[0]))
             sbar = params[1]
 
             ps = self._get_ps(alp, sbar, smax, s_step)
@@ -2061,12 +2061,13 @@ class ExpansionModel(NoiseModel):
                                                      landscape.shape)
         opt_params = np.array([self.alpvec[max_idx_alp],
                                self.sbarvec[max_idx_sbar]])
-
         if self.refine_global_opt:
+            opt_params[0] = np.log(opt_params[0] / (1 - opt_params[0]))
             outstruct = minimize(negative_log_likelihood,
                                  opt_params,
                                  method='BFGS')
             opt_params = outstruct.x
+            opt_params[0] = 1 / (1 + np.exp(-opt_params[0]))
 
         return opt_params, landscape, pn1n2_s, pn0n0_s, svec
 #
@@ -2153,7 +2154,7 @@ class ExpansionModel(NoiseModel):
                         count_2_col: str = 'Clone_count_2',
                         ci_width: float = 0.95,
                         legacy_code: bool = False
-                       ) -> pd.DataFrame:
+                       ) -> Tuple[pd.DataFrame, np.ndarray]:
         '''
         generate the table of clones that have been significantly detected to be responsive to an acute stimuli.
 
@@ -2186,26 +2187,26 @@ class ExpansionModel(NoiseModel):
 
         # Expansion analysis.
         self._process_dataframe(df, count_1_col=count_1_col, count_2_col=count_2_col)
-        (opt_params, landscape,
+        (expand_opt_params, landscape,
          pn1n2_s_d, pn0n0_s_d,
          svec) = self._learning_dynamics_expansion(paras_1, paras_2, noise_model, legacy_code)
-        print('expand opt params', list(opt_params))
-        df = self._compute_p_values_and_s_features(opt_params, pn1n2_s_d, svec,
+
+        df = self._compute_p_values_and_s_features(expand_opt_params, pn1n2_s_d, svec,
                                                    df, count_1_col, count_2_col,
                                                    ci_width, suffix='expand')
 
         # Contraction analysis.
         self._process_dataframe(df, count_1_col=count_2_col, count_2_col=count_1_col)
-        (opt_params, landscape,
+        (contract_opt_params, landscape,
          pn1n2_s_d, pn0n0_s_d,
          svec) = self._learning_dynamics_expansion(paras_2, paras_1, noise_model, legacy_code)
-        print('contract opt params', list(opt_params))
-        df = self._compute_p_values_and_s_features(opt_params, pn1n2_s_d, svec,
+
+        df = self._compute_p_values_and_s_features(contract_opt_params, pn1n2_s_d, svec,
                                                    df, count_2_col, count_1_col,
                                                    ci_width, suffix='contract',
                                                    contraction=True)
 
-        return df
+        return df, expand_opt_params, contract_opt_params
 
 # For backwards compatibility. Should be removed.
 class Expansion_Model(ExpansionModel):
@@ -2626,4 +2627,6 @@ class Generator:
         elif method == 'poisson':
 
             df_diffusion_LB  = _experimental_sampling_diffusion_Poisson(nreads_1, nreads_2, x_i_LB, x_f_LB, t, N_cells_day_0_LB, N_cells_day_1_LB)
+            print('local like', negative_log_likelihood(outstruct.x))
+            print(outstruct.x)
             df_diffusion_LB.to_csv(filename + '.csv' , sep= '\t')
