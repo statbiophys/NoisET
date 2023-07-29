@@ -1335,8 +1335,40 @@ def get_sparserep(df: pd.DataFrame,
     nreads_2 = df[count_2_col].sum()
     return indn1, indn2, sparse_rep_counts, unicountvals_1, unicountvals_2, nreads_1, nreads_2
 
+def _pois_log_likelihoods_legacy(x: np.ndarray,
+                                 rates: np.ndarray
+                                ) -> np.ndarray:
+    """
+    Compute Poisson log likelihoods.
+
+    This function computes the log factorials exactly at the expense
+    of many intermediate computations.
+
+    Parameters
+    ----------
+    x : numpy.ndarray
+        Array of data on which the log likelihood will be computed.
+    rates : numpy.ndarray
+        Array of Poisson rates.
+
+    Returns
+    -------
+    log_likelihoods : numpy.ndarray
+        Poisson log likelihoods.
+    """
+    xmax = x[-1]
+    rates_len = len(rates)
+    rates_w_newdim = rates[:, None]
+    log_factorial = np.insert(np.cumsum(np.log(np.arange(1, xmax + 1))), 0, 0.)[x]
+    log_likelihoods = x[None, :] * np.log(rates_w_newdim) - rates_w_newdim - log_factorial
+    rates_are_0 = rates == 0
+    x_is_0 = x == 0
+    log_likelihoods[rates_are_0, :] = -np.inf
+    log_likelihoods[:, x_is_0] = 0
+    return log_likelihoods
+
 def _pois_log_likelihoods(x: np.ndarray,
-                          mu: np.ndarray
+                          rates: np.ndarray
                          ) -> np.ndarray:
     """
     Compute Poisson log likelihoods.
@@ -1345,7 +1377,7 @@ def _pois_log_likelihoods(x: np.ndarray,
     ----------
     x : numpy.ndarray
         Array of data on which the log likelihood will be computed.
-    mu : numpy.ndarray
+    rates : numpy.ndarray
         Array of Poisson rates.
 
     Returns
@@ -1353,7 +1385,7 @@ def _pois_log_likelihoods(x: np.ndarray,
     log_likelihoods : numpy.ndarray
         Poisson log likelihoods.
     """
-    log_likelihoods = -mu + x * np.log(mu) - gammaln(x + 1)
+    log_likelihoods = -rates + x * np.log(rates) - gammaln(x + 1)
     log_likelihoods[np.isnan(log_likelihoods)] = 0
     return log_likelihoods
 
@@ -1389,7 +1421,7 @@ def _nbinom_log_likelihoods_legacy(x: np.ndarray,
     log_likelihoods : numpy.ndarray
         Negative binomial log likelihoods.
     """
-    xmax = np.max(x[-1])
+    xmax = x[-1]
     arange = np.arange(xmax + 1, dtype=np.float64)
     partial_log_likelihoods = np.log(1 + (r[:, None] - 1) / arange) + log_p[:, None]
     partial_log_likelihoods[:, 0] = r * log_1mp
@@ -1458,6 +1490,7 @@ def _get_rhof(alpha_rho: float,
         for integration. I.e., the minimum frequency is 10**fmin.
     nfbins : int, default 1200
         The number of bins used to generate the frequency distribution.
+        This will control the accuracy of the trapezoidal integration.
     freq_dtype : str or type, default np.float64
         The dtype used to create the distribution.
 
@@ -1488,9 +1521,34 @@ def _log_pn_f_0(unicounts: np.ndarray,
                 logfvec: np.ndarray,
                 paras: np.ndarray
                ) -> np.ndarray:
+    """
+    Compute the log likelihoods for the negative binomial-Poisson model.
+
+    This attempts to model the clone counts by marginalizing over the distribution
+    of T cells.
+
+    Parameters
+    ----------
+    unicounts : numpy.ndarray
+        An array containing the ordered, unique clone counts at a replicate or time point.
+    nreads : int
+        The total amount of reads observed at the replicate or time point.
+    logfvec : numpy.ndarray
+        The log frequencies used for integration.
+    paras : numpy.ndarray
+        The parameters of the model. Here the expected ordering is the power law
+        exponent, the negative binomial parameters, the total number of T cells,
+        and the negative log10 minimum frequency.
+
+    Returns
+    -------
+    log_likelihoods : numpy.ndarray
+        The log likelihoods for the negative binomial, Poisson model.
+    """
     m_total = 10.**paras[3]
     r_c = nreads / m_total
 
+    # Create a reasonable range of m T cells over which the distribution will be marginalized.
     nsigma = 5.
     nmin = 300.
     m_low = np.zeros(len(unicounts), dtype=np.int64)
@@ -1502,8 +1560,8 @@ def _log_pn_f_0(unicounts: np.ndarray,
     m_high = (mean_m + 5 * dev).astype(np.int64)
     m_low[mean_m <= dev**2] = 0
     m_high[unicounts <= nmin] = 10 * nmin / r_c
-    m_cellmax=np.max(m_high)
-    mvec=np.arange(m_cellmax + 1)
+    m_cellmax = np.max(m_high)
+    mvec = np.arange(m_cellmax + 1)
 
     pois_probs = np.exp(_pois_log_likelihoods(unicounts, (mvec * r_c)[:, None]))
 
@@ -1511,13 +1569,40 @@ def _log_pn_f_0(unicounts: np.ndarray,
     # unnecessary calculations.
     keep = np.any(pois_probs, axis=1)
     pois_probs = pois_probs[keep]
+
     nbinom_probs = np.exp(_log_pn_f_1(mvec[keep], m_total, logfvec, paras))
-    return np.log(nbinom_probs @ pois_probs)
+
+    log_likelihoods = np.log(nbinom_probs @ pois_probs)
+    return log_likelihoods
 
 def _nbinom_method_of_moments(nreads: int,
                               logfvec: np.ndarray,
                               paras: np.ndarray
                              ) -> Tuple[np.ndarray]:
+    """
+    Determine the negative binomial parameters using the mean and variance.
+
+    Parameters
+    ----------
+    nreads : int
+        The total amount of reads observed at the replicate or time point.
+    logfvec : numpy.ndarray
+        The log frequencies used for integration.
+    paras : numpy.ndarray
+        The parameters of the model. Here the expected ordering is the power law
+        exponent, the negative binomial parameters, and the negative log10 minimum
+        frequency.
+
+    Returns
+    -------
+    r : numpy.ndarray
+        In this parameterization, r can be thought of as the number of failures
+        until the experiment is stopped. However, r need not be integers.
+    log_p : numpy.ndarray
+        The logarithm of the probability of a success.
+    log_1mp : numpy.ndarray
+        The logarithm of a the probability of a failure.
+    """
     beta_mv, alpha_mv = paras[1], paras[2]
     mean_n = nreads * np.exp(logfvec)
     log_mean = np.log(mean_n)
@@ -1532,6 +1617,28 @@ def _log_pn_f_1_legacy(unicounts: np.ndarray,
                        logfvec: np.ndarray,
                        paras: np.ndarray
                       ) -> np.ndarray:
+    """
+    Compute the log likelihoods for the negative binomial model using the legacy
+    negative binomial calculator.
+
+    Parameters
+    ----------
+    unicounts : numpy.ndarray
+        An array containing the ordered, unique clone counts at a replicate or time point.
+    nreads : int
+        The total amount of reads observed at the replicate or time point.
+    logfvec : numpy.ndarray
+        The log frequencies used for integration.
+    paras : numpy.ndarray
+        The parameters of the model. Here the expected ordering is the power law
+        exponent, the negative binomial parameters, and the negative log10 minimum
+        frequency.
+
+    Returns
+    -------
+    numpy.ndarray
+        The log likelihoods for the negative binomial model.
+    """
     r, log_p, log_1mp = _nbinom_method_of_moments(nreads, logfvec, paras)
     return _nbinom_log_likelihoods_legacy(unicounts, r, log_p, log_1mp)
 
@@ -1540,37 +1647,149 @@ def _log_pn_f_1(unicounts: np.ndarray,
                 logfvec: np.ndarray,
                 paras: np.ndarray
                ) -> np.ndarray:
+    """
+    Compute the log likelihoods for the negative binomial model using the faster
+    negative binomial calculator.
+
+    Parameters
+    ----------
+    unicounts : numpy.ndarray
+        An array containing the ordered, unique clone counts at a replicate or time point.
+    nreads : int
+        The total amount of reads observed at the replicate or time point.
+    logfvec : numpy.ndarray
+        The log frequencies used for integration.
+    paras : numpy.ndarray
+        The parameters of the model. Here the expected ordering is the power law
+        exponent, the negative binomial parameters, and the negative log10 minimum
+        frequency.
+
+    Returns
+    -------
+    numpy.ndarray
+        The log likelihoods for the negative binomial model.
+    """
     r, log_p, log_1mp = _nbinom_method_of_moments(nreads, logfvec, paras)
     return _nbinom_log_likelihoods(unicounts, r[:, None], log_p[:, None], log_1mp[:, None])
+
+def _log_pn_f_2_legacy(unicounts: np.ndarray,
+                nreads: int,
+                logfvec: np.ndarray,
+                *args
+               ) -> np.ndarray:
+    """
+    Compute the log likelihoods for the negative binomial model using the legacy
+    Poisson calculator.
+
+    Parameters
+    ----------
+    unicounts : numpy.ndarray
+        An array containing the ordered, unique clone counts at a replicate or time point.
+    nreads : int
+        The total amount of reads observed at the replicate or time point.
+    logfvec : numpy.ndarray
+        The log frequencies used for integration.
+    paras : numpy.ndarray
+        The parameters of the model. Here the expected ordering is the power law
+        exponent, the negative binomial parameters, and the negative log10 minimum
+        frequency.
+
+    Returns
+    -------
+    numpy.ndarray
+        The log likelihoods for Poisson model.
+    """
+    mean_n = nreads * np.exp(logfvec)
+    return _pois_log_likelihoods_legacy(unicounts, mean_n)
 
 def _log_pn_f_2(unicounts: np.ndarray,
                 nreads: int,
                 logfvec: np.ndarray,
                 *args
                ) -> np.ndarray:
+    """
+    Compute the log likelihoods for the negative binomial model using the faster
+    Poisson calculator.
+
+    Parameters
+    ----------
+    unicounts : numpy.ndarray
+        An array containing the ordered, unique clone counts at a replicate or time point.
+    nreads : int
+        The total amount of reads observed at the replicate or time point.
+    logfvec : numpy.ndarray
+        The log frequencies used for integration.
+    paras : numpy.ndarray
+        The parameters of the model. Here the expected ordering is the power law
+        exponent, the negative binomial parameters, and the negative log10 minimum
+        frequency.
+
+    Returns
+    -------
+    numpy.ndarray
+        The log likelihoods for Poisson model.
+    """
     mean_n = nreads * np.exp(logfvec)
     return _pois_log_likelihoods(unicounts, mean_n[:, None])
 
 class NoiseModel():
-
     """
-    A class used to build an object associated to methods in order to learn the experimental noise from same day
-    biological RepSeq samples.
+    Class used learn the experimental noise from same day biological RepSeq samples.
 
-    ...
+    Parameters
+    ----------
+    num_frequency_bins : int, default 1200
+        The number of bins used to generate the frequency distribution.
+        This will control the accuracy of the trapezoidal integration.
+    freq_dtype : str or type, default np.float64
+        The dtype used for the frequency calculations.
+
+    Attributes
+    ----------
+    nfbins : int
+        The number of bins used to generate the frequency distribution.
+    freq_dtype : str or type
+        The dtype used for the frequency calculations.
+    indn1 : numpy.ndarray
+        The indices which map the unique counts in count_1_col back to the unique
+        clone pairs.
+    indn2 : numpy.ndarray
+        The indices which map the unique counts in count_2_col back to the unique
+        clone pairs.
+    sparse_rep_counts : numpy.ndarray
+        The amounts of each pair of ordered clone counts that are present
+        in the two columns.
+    unicountvals_1 : numpy.ndarray
+        An array of the unique counts present in count_1_col.
+    unicountvals_2 : numpy.ndarray
+        An array of the unique counts present in count_2_col.
+    nreads_1 : int
+        The total number of clone counts in count_1_col.
+    nreads_2 : int
+        The total number of clone counts in count_2_col.
+    num_clones_obs : int
+        The total number of clones observed.
 
     Methods
     -------
-
-    get_sparserep(df) :
-        get sparse representation of the abundances / frequencies of the TCR clones present in both RepSeq samples of interest.
-        this changes the data input to fasten the algorithm
-
-    learn_null_model(df, noise_model, init_paras,  output_dir = None, filename = None, display_loss_function = False) :
-        function to optimize the likelihood associated to the experimental noise model and get the associated parameters.
-
+    _process_dataframe(df, count_1_col='Clone_count_1', count_2_col='Clone_count_2')
+        Get the sparse representation of the abundances of the TCR clone pairs
+        present in the RepSeq samples and store the output as class attributes.
+    _callback(paras, log_pn_f_func)
+        Print optimization iteration information.
+    _get_pn1n2(paras, log_pn_f_func)
+        Compute the probability of the clone pairs.
+    _avg_log_likelihood_pn1n2(paras, log_pn_f_func)
+        Compute the average log likelihood of the clone pairs observed in the data.
+    _nullmodel_constr_fn(paras, log_pn_f_func, constr_type)
+        Compute the constraint given the parameters and likelihood function.
+    learn_null_model(df, noise_model, init_paras,  outfile=None, constr_type=1,
+                     tol=1e-6, maxiter=200, count_1_col='Clone_count_1',
+                     count2_col='Clone_count_2', bounds=None)
+        Learn the parameters of the noise by optimizing the chosen model subject
+        to the chosen constraint.
     diversity_estimate(df, paras, noise_model) :
-        function to get the estimation of diversity from the noise model information.
+        Estimate of the diversity using the noise model parameters.
     """
     def __init__(self,
                  num_frequency_bins: int = 1200,
@@ -1584,6 +1803,23 @@ class NoiseModel():
                            count_1_col: str = 'Clone_count_1',
                            count_2_col: str = 'Clone_count_2'
                           ) -> Tuple[np.ndarray, int]:
+        """
+        Obtain the sparse representation of the clone pairs and save as class
+        attributes.
+
+        Parameters
+        ----------
+        df : pandas.DatFrame
+            The input DataFrame.
+        count_1_col : str, default 'Clone_count_1'
+            The column containing the counts at one datapoint.
+        count_2_col : str, default 'Clone_count_2'
+            The column containing the counts at the other datapoint.
+
+        Returns
+        -------
+        None
+        """
         self.sparse_rep = get_sparserep(df, count_1_col, count_2_col)
 
         (self.indn1, self.indn2, self.sparse_rep_counts,
@@ -1596,8 +1832,20 @@ class NoiseModel():
                   paras: np.ndarray,
                   log_pn_f_func: Callable
                  ) -> None:
-        '''prints iteration info. called by scipy.minimize. Not useful for the user.'''
+        """
+        Print optimization iteration information.
 
+        Parameters
+        ----------
+        paras : numpy.ndarray
+            The current state of the parameters.
+        log_pn_f_func : callable
+            The log likelihood function associated with the selected noise model.
+
+        Returns
+        -------
+        None
+        """
         global curr_iter
         #curr_iter = 0
         global Loss_function
@@ -1612,7 +1860,19 @@ class NoiseModel():
                    log_pn_f_func: Callable,
                   ) -> np.ndarray:
         """
-        Tool to compute likelihood of the noise model. It is not useful for the user.
+        Compute the probabilities of observing the clone pairs.
+
+        Parameters
+        ----------
+        paras : numpy.ndarray
+            The noise model parameters.
+        log_pn_f_func : callable
+            The log likelihood function associated with the selected noise model.
+
+        Returns
+        -------
+        pn1n2 : numpy.ndarray
+            The probabilities of observing the clone pairs.
         """
         alpha = paras[0]
         fmin = paras[-1]
@@ -1637,20 +1897,58 @@ class NoiseModel():
                                   paras: np.ndarray,
                                   log_pn_f_func: Callable,
                                  ) -> np.float64:
+        """
+        Compute the average log likelihood of observing all the clone pairs.
+
+        Parameters
+        ----------
+        paras : numpy.ndarray
+            The noise model parameters.
+        log_pn_f_func : callable
+            The log likelihood function associated with the selected noise model.
+
+        Returns
+        -------
+        avg_log_likelihood : np.float64
+            The average log likelihood of observing all the clone pairs.
+        """
         pn1n2 = self._get_pn1n2(paras, log_pn_f_func)
         log_pn1n2 = np.where(pn1n2 > 0, np.log(pn1n2), 0)
         avg_log_likelihood = -np.dot(self.sparse_rep_counts, log_pn1n2) / self.num_clones_obs
         return avg_log_likelihood
 
-    # Constraints for the Null-Model, no filtered 
     def _nullmodel_constr_fn(self,
                              paras: np.ndarray,
                              log_pn_f_func: Callable,
                              constr_type: int
                             ) -> Union[np.float64, Tuple[np.float64]]:
         """
-        returns either or both of the two level-set functions: log<f>-log(1/N), with N=Nclones/(1-P(0,0)) and log(Z_f), with Z_f=N<f>_{n+n'=0} + sum_i^Nclones <f>_{f|n,n'}
-        not useful for the user
+        Calculate the data-unspecific and data-specific constraints for the noise.
+
+        The data-unspecific constraint is log<f> - log(1 / N) = 0,
+        with N = Nclones / (1 - P(0, 0)). <f> is calculated using only the frequency
+        prior.
+
+        The data-specific constraint is log(Z_f) where Z_f = N<f>_{n + n' = 0}
+        + \sum_i^Nclones <f>_{f | n, n'}, where <f> is calculated using the posterior.
+
+        See https://doi.org/10.1371/journal.pcbi.1007873 for more details.
+
+        Parameters
+        ----------
+        paras : numpy.ndarray
+            The noise model parameters.
+        log_pn_f_func : callable
+            The log likelihood function associated with the selected noise model.
+        constr_type : int
+            The type of constraint. 0 specifies the data-unspecific constraint
+            while 1 specifies the data-specific constraint. Any other input
+            gives both constraints.
+
+        Returns
+        -------
+        np.float64 or tuple of np.float64
+            Either the data-unspecific constraint, the data-specific constraint, or both.
         """
         alpha = paras[0]  # power law exponent
         fmin = paras[-1] # true minimal frequency 
@@ -1664,50 +1962,49 @@ class NoiseModel():
         log_pn2_f = log_pn_f_func(self.unicountvals_2, self.nreads_2, logfvec, paras)
 
         integ = np.exp(log_pn1_f[:, 0] + log_pn2_f[:, 0] + logrhofvec + logfvec)
-        Pn0n0 = np.dot(dlogfby2, integ[1:] + integ[:-1])
-        logPnng0 = np.log(1 - Pn0n0)
-        log_sum_sparse_counts = np.log(self.num_clones_obs)
-        avgf_null_pair = np.exp(logPnng0 - log_sum_sparse_counts)
+        pn0n0 = np.dot(dlogfby2, integ[1:] + integ[:-1])
+        log_pn_obs = np.log(1 - pn0n0)
+        log_num_clones_obs = np.log(self.num_clones_obs)
+        avgf_null_pair = np.exp(log_pn_obs - log_num_clones_obs)
 
-        C1 = np.log(avgf_ps) - np.log(avgf_null_pair)
+        constraint_data_unspecific = np.log(avgf_ps) - np.log(avgf_null_pair)
 
         integ = np.exp(log_pn1_f[:, 0] + log_pn2_f[:, 0] + logrhofvec + 2 * logfvec)
         log_avgf_n0n0 = np.log(np.dot(dlogfby2, integ[1:] + integ[:-1]))
 
         log_integ = log_pn1_f[:, self.indn1] + log_pn2_f[:, self.indn2] + (logrhofvec + logfvec)[:, None]
         integ = np.exp(log_integ)
-        log_Pn1n2 = np.log(np.dot(dlogfby2, integ[1:] + integ[:-1]))
+        log_pn1n2 = np.log(np.dot(dlogfby2, integ[1:] + integ[:-1]))
         integ = np.exp(log_integ + logfvec[:, None])
-        tmp = deepcopy(log_Pn1n2)
-        tmp[tmp == -np.Inf] = np.inf  # since subtracted in next line
+        tmp = deepcopy(log_pn1n2)
+        tmp[tmp == -np.inf] = np.inf  # since subtracted in next line
         avgf_n1n2 = np.exp(np.log(np.dot(dlogfby2, integ[1:] + integ[:-1])) - tmp)
         log_sumavgf = np.log(np.dot(self.sparse_rep_counts, avgf_n1n2))
 
-        logNclones = log_sum_sparse_counts - logPnng0
-        Z = np.exp(logNclones + np.log(Pn0n0) + log_avgf_n0n0) + np.exp(log_sumavgf)
+        log_num_clones = log_num_clones_obs - log_pn_obs
+        Z = np.exp(log_num_clones + np.log(pn0n0) + log_avgf_n0n0) + np.exp(log_sumavgf)
 
-        C2 = np.log(Z)
+        constraint_data_specific = np.log(Z)
 
-        # print('C1:'+str(C1)+' C2:'+str(C2))
         if constr_type == 0:
-            return C1
+            return constraint_data_unspecific
         elif constr_type == 1:
-            return C2
+            return constraint_data_specific
         else:
-            return C1, C2
+            return constraint_data_unspecific, constraint_data_specific
 
     def learn_null_model(self,
                          df: pd.DataFrame,
                          noise_model: int,
                          init_paras: np.ndarray,
-                         output_dir: str = None,
-                         filename: str = None,
+                         outfile: str = None,
                          constr_type: int = 1,
                          tol: float = 1e-6,
                          maxiter: int = 200,
                          count_1_col: str = 'Clone_count_1',
                          count_2_col: str = 'Clone_count_2',
-                         bounds: Tuple[Tuple[np.float64]] = None
+                         bounds: Tuple[Tuple[np.float64]] = None,
+                         legacy_code: bool = False
                         ) -> Tuple[OptimizeResult, float]:
         """
         Parameters
@@ -1721,11 +2018,21 @@ class NoiseModel():
             Options are 0, 1, or 2.
         init_paras: numpy.ndarray
             Initial vector of parameters to start the optimization of the model.
-        output_dir : str, optional
-            The output directory name to which the values of the parameters will be saved.
+        outfile: str, optional
+            The path to where the noise parameters will be saved in a tab-delimited manner.
         constr_type : int, default 1
             Specify which constraint to use.
             Constraint type 1 gives only low error modes, see paper for details.
+        tol : float, default 1e-6
+            Tolerance for terminating optimization.
+        maxiter : int, default 200
+            Maximum iterations for terminating optimization.
+        count_1_col : str, default 'Clone_count_1'
+            The column containing the counts at one datapoint.
+        count_2_col : str, default 'Clone_count_2'
+            The column containing the counts at the other datapoint.
+        legacy_code : bool, default False
+            Use the legacy calculators for Poisson and negative binomial likelihoods.
 
         Returns
         -------
@@ -1734,7 +2041,6 @@ class NoiseModel():
             which give the solution, and ``fun``, the value of the solution.
         constr_value : float
             The value of the constraint at the solution.
-
         """
         self._process_dataframe(df, count_1_col, count_2_col)
 
@@ -1747,12 +2053,18 @@ class NoiseModel():
             parameter_labels = ['alph_rho', 'beta', 'alpha', 'fmin']
             if bounds is None:
                 bounds = [(-6, -0.5), (1e-8, 5), (-2, 5), (-15, -4)]
-            log_pn_f_func = _log_pn_f_1
+            if legacy_code:
+                log_pn_f_func = _log_pn_f_1_legacy
+            else:
+                log_pn_f_func = _log_pn_f_1
         elif noise_model == 2:
             parameter_labels = ['alph_rho', 'fmin']
             if bounds is None:
                 bounds = [(-6, -0.5), (-15, -4)]
-            log_pn_f_func = _log_pn_f_2
+            if legacy_code:
+                log_pn_f_func = _log_pn_f_2_legacy
+            else:
+                log_pn_f_func = _log_pn_f_2
         else:
             raise ValueError('noise_model must be 0, 1, or 2.')
 
@@ -1793,14 +2105,8 @@ class NoiseModel():
             d = {'label' : parameter_labels, 'value': outstruct.x}
             df = pd.DataFrame(data = d)
 
-        if (output_dir == None) & (filename == None):
-            df.to_csv('nullpara' + str(noise_model)+ '.txt', sep = '\t')
-
-        elif (output_dir != None) & (filename == None):
-            df.to_csv(output_dir + '/nullpara' + str(noise_model)+ '.txt', sep = '\t')
-
-        else :
-            df.to_csv(output_dir + '/' + filename + '.txt', sep = '\t')
+        if outfile is not None:
+            df.to_csv(outfile, sep='\t')
 
         return outstruct, constr_value
 
@@ -1810,22 +2116,22 @@ class NoiseModel():
                            noise_model: int
                           ) -> int:
         """
-        Estimate diversity of the individual repertoire from the experimental noise learning step.
+        Estimate diversity of an individual's repertoire.
 
         Parameters
         ----------
-        df : data-frame
-            The data-frame which has been used to learn the noise model
-        paras : numpy array
-            vector containing the noise parameters
+        df : pandas.DataFrame
+            The DataFrame used to learn the noise model
+        paras : numpy.ndarray
+            The learned noise parameters.
         noise_model : int
-            choice of noise model
+            Choice of noise model.
+            Options are 0, 1, or 2.
 
         Returns
         -------
-        diversity_estimate
-            float, diversity estimate from the noise model inference.
-
+        int
+            The diversity of the repertoire.
         """
         if noise_model == 0:
             log_pn_f_func = _log_pn_f_0
@@ -1851,28 +2157,92 @@ class NoiseModel():
 
         # Compute P(0,0) for the normalization constraint
         integ = np.exp(logrhofvec + log_pn1_f + log_pn2_f + logfvec)
-        Pn0n0 = np.dot(dlogfby2, integ[1:] + integ[:-1])
+        pn0n0 = np.dot(dlogfby2, integ[1:] + integ[:-1])
 
-        return int(self.num_clones_obs / (1 - Pn0n0))
+        return int(self.num_clones_obs / (1 - pn0n0))
 
 # For backwards compatibility. Should be removed.
 class Noise_Model(NoiseModel):
     pass
 
-#============================================Differential expression =============================================================
-
 class ExpansionModel(NoiseModel):
-
     """
-    A class used to build an object associated to methods in order to select significant expanding or
-    contracting clones from RepSeq samples taken at two different time points.
+    Class used to detect significantly expanding or contracting clones from RepSeq
+    samples taken at two different time points.
 
-    ...
+    Parameters
+    ----------
+    num_frequency_bins : int, default 1200
+        The number of bins used to generate the frequency distribution.
+        This will control the accuracy of the trapezoidal integration.
+    freq_dtype : str or type, default np.float64
+        The dtype used for the frequency calculations.
+    num_grid_points : int, default 50
+        Number of grid points along the axes used for probing the global optimum.
+    fraction_responding_lim : tuple of np.float64, default (1e-3, 0.99)
+        The bounds of the mixture parametere for the grid search.
+    log_fold_change_lim : tuple of np.float64, default (0.01, 5)
+        The bounds of the average selection factor for the grid search.
+    smax : np.float64, default 25
+        The maximum selection factor to be used for compute the selection posteriors.
+    s_step : np.float64, default 0.1
+        The step size of the discretization used for the selection posteriors.
+    refine_global_opt : bool, default True
+        Use a local minimization algorithm to refine the grid search optimum.
+
+    Attributes
+    ----------
+    nfbins : int
+        The number of bins used to generate the frequency distribution.
+    freq_dtype : str or type
+        The dtype used for the frequency calculations.
+    num_grid_points : int, default 50
+        Number of grid points along the axes used for probing the global optimum.
+    alpvec : numpy.ndarray
+        The values used as the mixture probability axis for the grid search.
+    sbarvec : numpy.ndarray
+        The values used as the average selection factor axis for the grid search.
+    smax : np.float64
+        The maximum selection factor to be used for compute the selection posteriors.
+    s_step : np.float64
+        The step size of the discretization used for the selection posteriors.
+    refine_global_opt : bool, default True
+        Use a local minimization algorithm to refine the grid search optimum.
+    indn1 : numpy.ndarray
+        The indices which map the unique counts in count_1_col back to the unique
+        clone pairs.
+    indn2 : numpy.ndarray
+        The indices which map the unique counts in count_2_col back to the unique
+        clone pairs.
+    sparse_rep_counts : numpy.ndarray
+        The amounts of each pair of ordered clone counts that are present
+        in the two columns.
+    unicountvals_1 : numpy.ndarray
+        An array of the unique counts present in count_1_col.
+    unicountvals_2 : numpy.ndarray
+        An array of the unique counts present in count_2_col.
+    nreads_1 : int
+        The total number of clone counts in count_1_col.
+    nreads_2 : int
+        The total number of clone counts in count_2_col.
+    num_clones_obs : int
+        The total number of clones observed.
 
     Methods
     -------
-    expansion_table(outpath, paras_1, paras_2, df, noise_model, pval_threshold, smed_threshold):
-        generate the table of clones that have been significantly detected to be responsive to an acute stimuli.
+    _get_ps(alp, sbar, smax, stp)
+        Compute the Laplace prior for the effect sizes for scale alp and sbar.
+    _get_ps_mesh(alpmesh, sbarmesh, smax, stp)
+        Compute the Laplace prior for the effect sizes for mesh alp and sbar.
+    _learning_dynamics_expansion(paras_1, paras_2, noise_model, legacy_code, display_landscape)
+        Solve for the optimal fraction of responding clones and average effect size
+        given the noise parameters and ordering of the data.
+    _compute_p_values_and_s_features(params, pn1n2_s, svec, df, count_1_col, count_2_col,
+                                     ci_width, suffix, contraction)
+        Obtain the p-values and selection posteior statistics for all clone pairs.
+    expansion_table(df, noise_model, paras_1, paras_2, count_1_col, count_2_col,
+                    ci_width, legacy_code, display_landscape)
+        Analyze the input clone count data for expansion and contraction.
     """
     def __init__(self,
                  num_frequency_bins: int = 1200,
@@ -1893,11 +2263,31 @@ class ExpansionModel(NoiseModel):
         self.s_step = s_step
         self.refine_global_opt = refine_global_opt
 
-    def _get_ps(self, alp, sbar, smax, stp):
+    def _get_ps(self,
+                alp: np.float64,
+                sbar: np.float64,
+                smax: np.float64,
+                stp: np.float64
+               ) -> np.ndarray:
         """
-        generates symmetric exponential distribution over log fold change
-        with effect size sbar and nonresponding fraction 1-alp at s=0.
-        computed over discrete range of s from -smax to smax in steps of size stp
+        Compute the Laplace prior for log fold change with average effect size
+        sbar and nonresponding fraction 1 - alp at s = 0.
+
+        Parameters
+        ----------
+        alp : np.float64
+            The fraction of responding clones.
+        sbar : np.float64
+            The average effect size.
+        smax : np.float64
+            The upper limit up to which the distribution will be calculated.
+        stp : np.float64
+            The discrete step size of the domain.
+
+        Returns
+        -------
+        ps : numpy.ndarray
+            The Laplace prior for the effect sizes.
         """
         lamb = -stp / sbar
         smaxt = round(smax / stp)
@@ -1907,12 +2297,35 @@ class ExpansionModel(NoiseModel):
         ps[s_zeroind] += (1 - alp)
         return ps
 
-    def _get_ps_mesh(self, alpmesh, sbarmesh, smax, s_step):
-        '''
-        generates symmetric exponential distribution over log fold change
-        with effect size sbar and nonresponding fraction 1-alp at s=0.
-        computed over discrete range of s from -smax to smax in steps of size stp
-        '''
+    def _get_ps_mesh(self,
+                     alpmesh: np.ndarray,
+                     sbarmesh: np.ndarray,
+                     smax: np.float64,
+                     s_step: np.float64
+                    ) -> np.ndarray:
+        """
+        Compute the Laplace prior for log fold change with average effect size
+        sbar and nonresponding fraction 1 - alp at s = 0 over the entire grid
+        of responding fractions and average effect sizes.
+
+        Parameters
+        ----------
+        alpmesh : numpy.ndarray
+            The meshgrid of fraction of responding clones.
+            Values correspond one-to-one with sbarmesh.
+        sbarmesh : numpy.ndarray
+            The meshgrid average effect size.
+            Values correspond one-to-one with alpmesh.
+        smax : np.float64
+            The upper limit up to which the distribution will be calculated.
+        stp : np.float64
+            The discrete step size of the domain.
+
+        Returns
+        -------
+        ps : numpy.ndarray
+            The Laplace prior for the effect sizes.
+        """
         lamb = -s_step / sbarmesh
         smaxt = round(smax / s_step)
         s_zeroind = int(smaxt)
@@ -1928,10 +2341,38 @@ class ExpansionModel(NoiseModel):
                                      paras_2: np.ndarray,
                                      noise_model: int,
                                      legacy_code: bool = False,
-                                     display_plot: bool = False
+                                     display_landscape: bool = False
                                     ) -> Tuple[np.ndarray]:
         """
-        function to infer the expansion mode parameters - not usable by the user.
+        Obtain the optimal fraction of responding clones and average effect size.
+
+        Parameters
+        ----------
+        paras_1 : numpy.ndarray
+            The noise parameters obtained for the first datapoint.
+        paras_2 : numpy.ndarray
+            The noise parameters obtained for the second datapoint.
+        noise_model : int
+            Choice of noise model.
+            Options are 0, 1, or 2.
+        legacy_code : bool, default False
+            Use the legacy calculators for Poisson and negative binomial likelihoods.
+        display_landscape : bool, default False
+            Show the log likelihood landscape computed along the grid and
+            where the optimal parameters are located.
+
+        Returns
+        -------
+        opt_params : numpy.ndarray
+            The optimal fraction of responding clones and average effect size.
+        landscape : numpy.ndarray
+            The log likelihood landscape computed along the grid.
+        pn1n2_s : numpy.ndarray
+            The likelihood of the clone pairs given the selection factors.
+        pn0n0_s : numpy.ndarray
+            The probability of not observing clone pairs given the selection factors.
+        svec : numpy.ndarray
+            The domain of selection factors used in the calculations.
         """
         if noise_model == 0:
             log_pn_f_func = _log_pn_f_0
@@ -1941,7 +2382,10 @@ class ExpansionModel(NoiseModel):
             else:
                 log_pn_f_func = _log_pn_f_1
         elif noise_model == 2:
-            log_pn_f_func = _log_pn_f_2
+            if legacy_code:
+                log_pn_f_func = _log_pn_f_2_legacy
+            else:
+                log_pn_f_func = _log_pn_f_2
         else:
             raise ValueError('noise_model must be 0, 1, or 2.')
 
@@ -1993,11 +2437,14 @@ class ExpansionModel(NoiseModel):
             """
             Compute the negative log likelihood for expansion.
 
+            The fraction of responding clones is computed with
+            a expit function to ensure its values are between 0 and 1.
+
             Parameters
             ----------
-            params : np.ndarray
+            params : numpy.ndarray
                 The first entry is the fraction of responding clones
-                and the second is their average effect size.
+                and the second is the average effect size.
 
             Returns
             -------
@@ -2051,7 +2498,6 @@ class ExpansionModel(NoiseModel):
             return landscape
 
         print('Calculation Surface:')
-
         alpmesh, sbarmesh = np.meshgrid(self.alpvec, self.sbarvec)
         st = time.time()
         landscape = create_landscape(alpmesh, sbarmesh)
@@ -2061,7 +2507,12 @@ class ExpansionModel(NoiseModel):
                                                      landscape.shape)
         opt_params = np.array([self.alpvec[max_idx_alp],
                                self.sbarvec[max_idx_sbar]])
+
+        # Use a local minimizer to refine the grid search optimum.
         if self.refine_global_opt:
+            # The input for the fraction of responding clones is initialized
+            # using a logit function to ensure that the optimization is conducted
+            # along the real line properly.
             opt_params[0] = np.log(opt_params[0] / (1 - opt_params[0]))
             outstruct = minimize(negative_log_likelihood,
                                  opt_params,
@@ -2069,34 +2520,33 @@ class ExpansionModel(NoiseModel):
             opt_params = outstruct.x
             opt_params[0] = 1 / (1 + np.exp(-opt_params[0]))
 
+        if display_landscape:
+            fig, ax = plt.subplots(1, figsize=(10,8))
+
+            # Zoom in near the optimum to get a better sense of the landscape.
+            landscape_copy = landscape.copy()
+            landscape_copy[landscape_copy < np.max(landscape_copy) * 1.01] = np.nan
+
+            ax.contour(alpmesh, sbarmesh, landscape_copy, linewidths=1, colors='k', linestyles = 'solid')
+            cs = ax.contourf(alpmesh, sbarmesh, landscape_copy, 20, cmap = 'viridis', alpha= 0.8)
+
+            xmax, ymax = opt_params
+            text= r'$\hat{\alpha}$' + f' ={xmax:.3f}, ' + r'$\hat{\bar{s}}$' + f' ={ymax:.3f}'
+            bbox_props = dict(boxstyle='square,pad=0.3', fc='w', ec='k', lw=0.72)
+            arrowprops=dict(arrowstyle="->",connectionstyle='angle,angleA=0,angleB=80')
+            kw = dict(xycoords='data',textcoords='axes fraction',
+                      arrowprops=arrowprops, bbox=bbox_props, ha='right', va='top')
+            plt.annotate(text, xy=(xmax, ymax), xytext=(0.94, 0.96), **kw)
+            plt.xlabel(r'$ \alpha$, fraction of the repertoire that is responding')
+            plt.ylabel(r'$\bar{s}$, characteristic expansion')
+            plt.xscale('log')
+            plt.yscale('log')
+            plt.grid()
+            plt.title(r'Grid search graph for $\alpha$ and  $\bar{s}$ parameters.')
+            plt.colorbar(cs)
+            plt.show()
+
         return opt_params, landscape, pn1n2_s, pn0n0_s, svec
-#
-    #---------------------------Plot-the-grid-------------------------------------------
-#        if display_plot:
-#
-#            fig, ax =plt.subplots(1, figsize=(10,8))
-#
-#
-#            a,b = np.where(LSurface == np.max(LSurface))
-#
-#            ax.contour(alpmesh, sbarmesh, LSurface, linewidths=1, colors='k', linestyles = 'solid')
-#            plt.contourf(alpmesh, sbarmesh, LSurface, 20, cmap = 'viridis', alpha= 0.8)
-#
-#            xmax = alpmesh[a[0],b[0]]
-#            ymax = sbarmesh[a[0],b[0]]
-#            text= r"$ alpha={:.3f}, s={:.3f} $".format(xmax, ymax)
-#            bbox_props = dict(boxstyle="square,pad=0.3", fc="w", ec="k", lw=0.72)
-#            arrowprops=dict(arrowstyle="->",connectionstyle="angle,angleA=0,angleB=80")
-#            kw = dict(xycoords='data',textcoords="axes fraction",
-#                arrowprops=arrowprops, bbox=bbox_props, ha="right", va="top")
-#            plt.annotate(text, xy=(xmax, ymax), xytext=(0.94,0.96), **kw)
-#            plt.xlabel(r'$ \alpha, \ size \ of \ the \ repertoire \ that \ answers \ to \ the \ vaccine $') 
-#            plt.ylabel(r'$ s_{bar}, \ characteristic \ expansion \ decrease $')
-#            plt.xscale('log')
-#            plt.yscale('log')
-#            plt.grid()
-#            plt.title(r'$Grid \ Search \ graph \ for \ \alpha \ and \ s_{bar} \ parameters. $')
-#            plt.colorbar()
 
     def _compute_p_values_and_s_features(self,
                                          params: np.ndarray,
@@ -2108,14 +2558,43 @@ class ExpansionModel(NoiseModel):
                                          ci_width: float = 0.95,
                                          suffix: str = '',
                                          contraction: bool = False,
-                                        ):
+                                        ) -> pd.DataFrame:
+        """
+        Compute the p-values and selection posterior statistics.
+
+        Parameters
+        ----------
+        params : numpy.ndarray
+            The optimal fraction of responding clones and average effect size.
+        pn1n2_s : numpy.ndarray
+            The likelihood of the clone pairs given the selection factors.
+        svec : numpy.ndarray
+            The domain of selection factors used in the calculations.
+        df : pandas.DataFrame
+            The DataFrame containing the clone pairs.
+        count_1_col : str, default 'Clone_count_1'
+            The column containing the counts at one datapoint.
+        count_2_col : str, default 'Clone_count_2'
+            The column containing the counts at the other datapoint.
+        ci_width : float, default 0.95
+            The confidence interval width.
+        suffix : str, default ''
+            The suffix to be appended to the p-value and statistics columns.
+        contraction : bool, default False
+            If enabled, the signs of the statistics will be flipped.
+
+        Returns
+        -------
+        df : pandas.DataFrame
+            The input DataFrame with columns for the p-values and selection statistics.
+        """
         ps = self._get_ps(*params, self.smax, self.s_step)
         unnorm_posterior = pn1n2_s * ps[:,np.newaxis,np.newaxis]
         marginal_likelihood = np.sum(unnorm_posterior, 0)
         posterior = unnorm_posterior / marginal_likelihood[np.newaxis,:,:]
         posterior_pairs = posterior[:, self.indn1, self.indn2]
         posterior_cdf = np.cumsum(posterior_pairs, 0)
-        backward_cdf = posterior[::-1, self.indn1, self.indn2].cumsum(0)
+        #backward_cdf = posterior[::-1, self.indn1, self.indn2].cumsum(0)
 
         mapped = df.groupby([count_1_col, count_2_col]).apply(lambda x: x.index)
         arr_map = np.zeros(len(df), dtype=np.int64)
@@ -2130,7 +2609,7 @@ class ExpansionModel(NoiseModel):
             suffix = '_' + suffix
 
         df[f'pval{suffix}'] = posterior_cdf[where_s_eq_0, arr_map]
-        df[f'pval{suffix}_backward'] = backward_cdf[where_s_eq_0_backward, arr_map]
+        #df[f'pval{suffix}_backward'] = backward_cdf[where_s_eq_0_backward, arr_map]
 
         df[f's_mean{suffix}'] = np.dot(svec, posterior_pairs)[arr_map]
         df[f's_max{suffix}'] = svec[np.argmax(posterior_pairs, 0)[arr_map]]
@@ -2153,43 +2632,53 @@ class ExpansionModel(NoiseModel):
                         count_1_col: str = 'Clone_count_1',
                         count_2_col: str = 'Clone_count_2',
                         ci_width: float = 0.95,
-                        legacy_code: bool = False
+                        legacy_code: bool = False,
+                        display_landscape: bool = False
                        ) -> Tuple[pd.DataFrame, np.ndarray]:
-        '''
-        generate the table of clones that have been significantly detected to be responsive to an acute stimuli.
+        """
+        Analyze the input clone count data for expansion and contraction.
 
         Parameters
         ----------
-        outpath  : str
-            Name of the directory where to store the output table
-        paras_1  : numpy array
-            parameters of the noise model that has been learned at time_1
-        paras_2  : numpy array
-            parameters of the noise model that has been learned at time_2
-        df       : pandas dataframe
-            pandas dataframe merging the two RepSeq data at time_1 and time_2
-
-        noise_model : int
-            choice of noise model 0: Poisson, 1: negative Binomial, 2: negative Binomial + Poisson
-
-        pval_threshold : float
-            P-value threshold to detect and discriminate if a TCR clone has expanded
-
-        smed_threshold : float
-            median of the log-fold change threshold to detect if a TCR clone has expanded
+        df : pandas.DatFrame
+            The input DataFrame.
+        noise_model: int
+            Choice of noise model.
+            Options are 0, 1, or 2.
+        paras_1 : numpy.ndarray
+            The noise parameters obtained for the first datapoint.
+        paras_2 : numpy.ndarray
+            The noise parameters obtained for the second datapoint.
+        count_1_col : str, default 'Clone_count_1'
+            The column containing the counts at one datapoint.
+        count_2_col : str, default 'Clone_count_2'
+            The column containing the counts at the other datapoint.
+        ci_width : float, default 0.95
+            The confidence interval width.
+        legacy_code : bool, default False
+            Use the legacy calculators for Poisson and negative binomial likelihoods.
+        display_landscape: bool, False
+            Show the log likelihood landscape computed along the grid and
+            where the optimal parameters are located.
 
         Returns
         -------
-        data-frame - csv file
-            the output is a csv file of columns : $s_{1-low}$, $s_{2-med}$, $s_{3-high}$, $s_{max}$, $\bar{s}$, $f_1$, $f_2$, $n_1$, $n_2$, 'CDR3_nt', 'CDR3_AA' and '$p$-value'
-        '''
+        df : pandas.DataFrame
+            The input DataFrame with columns for the p-values and selection statistics
+            for the expansion and contraction analyses.
+        expand_opt_params : numpy.ndarray
+            The parameters learned for expansion.
+        contract_opt_params : numpy.ndarray
+            The parameters learned for contraction.
+        """
         df = df.copy()
 
         # Expansion analysis.
         self._process_dataframe(df, count_1_col=count_1_col, count_2_col=count_2_col)
         (expand_opt_params, landscape,
          pn1n2_s_d, pn0n0_s_d,
-         svec) = self._learning_dynamics_expansion(paras_1, paras_2, noise_model, legacy_code)
+         svec) = self._learning_dynamics_expansion(paras_1, paras_2, noise_model,
+                                                   legacy_code, display_landscape)
 
         df = self._compute_p_values_and_s_features(expand_opt_params, pn1n2_s_d, svec,
                                                    df, count_1_col, count_2_col,
@@ -2199,7 +2688,8 @@ class ExpansionModel(NoiseModel):
         self._process_dataframe(df, count_1_col=count_2_col, count_2_col=count_1_col)
         (contract_opt_params, landscape,
          pn1n2_s_d, pn0n0_s_d,
-         svec) = self._learning_dynamics_expansion(paras_2, paras_1, noise_model, legacy_code)
+         svec) = self._learning_dynamics_expansion(paras_2, paras_1, noise_model,
+                                                   legacy_code, display_landscape)
 
         df = self._compute_p_values_and_s_features(contract_opt_params, pn1n2_s_d, svec,
                                                    df, count_2_col, count_1_col,
