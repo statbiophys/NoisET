@@ -2237,11 +2237,16 @@ class ExpansionModel(NoiseModel):
     _learning_dynamics_expansion(paras_1, paras_2, noise_model, legacy_code, display_landscape)
         Solve for the optimal fraction of responding clones and average effect size
         given the noise parameters and ordering of the data.
-    _compute_p_values_and_s_features(params, pn1n2_s, svec, df, count_1_col, count_2_col,
+    _compute_posterior(params, pn1n2_s)
+        Compute the posteriors for all clone pairs that appear in the data using
+        the optimal fraction of responding clones and average effect size
+        along with the likelihood computed at those parameters.
+    _compute_p_values_and_s_features(posterior, svec, df, count_1_col, count_2_col,
                                      ci_width, suffix, contraction)
-        Obtain the p-values and selection posteior statistics for all clone pairs.
+        Obtain the p-values and selection posterior statistics for all clone pairs.
     expansion_table(df, noise_model, paras_1, paras_2, count_1_col, count_2_col,
-                    ci_width, legacy_code, display_landscape)
+                    ci_width, legacy_code, display_landscape, return_params,
+                    return_posteriors)
         Analyze the input clone count data for expansion and contraction.
     """
     def __init__(self,
@@ -2543,14 +2548,40 @@ class ExpansionModel(NoiseModel):
             plt.yscale('log')
             plt.grid()
             plt.title(r'Grid search graph for $\alpha$ and  $\bar{s}$ parameters.')
-            plt.colorbar(cs)
+            plt.colorbar(cs, label='average log likelihood')
             plt.show()
 
         return opt_params, landscape, pn1n2_s, pn0n0_s, svec
 
+    def _compute_posterior(self,
+                           params: np.ndarray,
+                           pn1n2_s: np.ndarray,
+                          ) -> np.ndarray:
+        """
+        Compute the posterior of the effect sizes for each clone pair.
+
+        Parameters
+        ----------
+        params : numpy.ndarray
+            The optimal fraction of responding clones and average effect size.
+        pn1n2_s : numpy.ndarray
+            The likelihood of the clone pairs given the selection factors.
+
+        Returns
+        -------
+        posterior : numpy.ndarray
+            The posterior of the effect sizes for each clone pair observed
+            in the dataset.
+        """
+        ps = self._get_ps(*params, self.smax, self.s_step)
+        unnorm_posterior = pn1n2_s * ps[:, None, None]
+        unnorm_marginal_likelihood = np.sum(unnorm_posterior, 0)
+        posterior = unnorm_posterior / unnorm_marginal_likelihood[None, :, :]
+        posterior = posterior[:, self.indn1, self.indn2]
+        return posterior
+
     def _compute_p_values_and_s_features(self,
-                                         params: np.ndarray,
-                                         pn1n2_s: np.ndarray,
+                                         posterior: np.ndarray,
                                          svec: np.ndarray,
                                          df: pd.DataFrame,
                                          count_1_col: str = 'Clone_count_1',
@@ -2564,10 +2595,9 @@ class ExpansionModel(NoiseModel):
 
         Parameters
         ----------
-        params : numpy.ndarray
-            The optimal fraction of responding clones and average effect size.
-        pn1n2_s : numpy.ndarray
-            The likelihood of the clone pairs given the selection factors.
+        posterior : numpy.ndarray
+            The posterior of the effect sizes for each clone pair that appears
+            in the data.
         svec : numpy.ndarray
             The domain of selection factors used in the calculations.
         df : pandas.DataFrame
@@ -2588,12 +2618,7 @@ class ExpansionModel(NoiseModel):
         df : pandas.DataFrame
             The input DataFrame with columns for the p-values and selection statistics.
         """
-        ps = self._get_ps(*params, self.smax, self.s_step)
-        unnorm_posterior = pn1n2_s * ps[:,np.newaxis,np.newaxis]
-        marginal_likelihood = np.sum(unnorm_posterior, 0)
-        posterior = unnorm_posterior / marginal_likelihood[np.newaxis,:,:]
-        posterior_pairs = posterior[:, self.indn1, self.indn2]
-        posterior_cdf = np.cumsum(posterior_pairs, 0)
+        posterior_cdf = np.cumsum(posterior, 0)
         #backward_cdf = posterior[::-1, self.indn1, self.indn2].cumsum(0)
 
         mapped = df.groupby([count_1_col, count_2_col]).apply(lambda x: x.index)
@@ -2611,8 +2636,8 @@ class ExpansionModel(NoiseModel):
         df[f'pval{suffix}'] = posterior_cdf[where_s_eq_0, arr_map]
         #df[f'pval{suffix}_backward'] = backward_cdf[where_s_eq_0_backward, arr_map]
 
-        df[f's_mean{suffix}'] = np.dot(svec, posterior_pairs)[arr_map]
-        df[f's_max{suffix}'] = svec[np.argmax(posterior_pairs, 0)[arr_map]]
+        df[f's_mean{suffix}'] = np.dot(svec, posterior)[arr_map]
+        df[f's_max{suffix}'] = svec[np.argmax(posterior, 0)[arr_map]]
 
         ci_lower = (1 - ci_width) / 2
         ci_arr = [ci_lower, 0.5, 1 - ci_lower]
@@ -2633,7 +2658,9 @@ class ExpansionModel(NoiseModel):
                         count_2_col: str = 'Clone_count_2',
                         ci_width: float = 0.95,
                         legacy_code: bool = False,
-                        display_landscape: bool = False
+                        display_landscape: bool = False,
+                        return_params: bool = False,
+                        return_posteriors: bool = False
                        ) -> Tuple[pd.DataFrame, np.ndarray]:
         """
         Analyze the input clone count data for expansion and contraction.
@@ -2657,46 +2684,80 @@ class ExpansionModel(NoiseModel):
             The confidence interval width.
         legacy_code : bool, default False
             Use the legacy calculators for Poisson and negative binomial likelihoods.
-        display_landscape: bool, False
+        display_landscape: bool, default False
             Show the log likelihood landscape computed along the grid and
             where the optimal parameters are located.
+        return_params : bool, default False
+            Return the respective fraction of responding clones and average
+            effect size that maximized the likelihoods for the expansion and
+            contraction analyses.
+        return_posteriors : bool, default False
+            Return the posteriors of the effect sizes for the clone pairs
+            for the expansion and contraction analyses.
 
         Returns
         -------
         df : pandas.DataFrame
             The input DataFrame with columns for the p-values and selection statistics
             for the expansion and contraction analyses.
-        expand_opt_params : numpy.ndarray
+        opt_params_expand : numpy.ndarray
             The parameters learned for expansion.
-        contract_opt_params : numpy.ndarray
+            Returned if return_params is set to True.
+        opt_params_contract : numpy.ndarray
             The parameters learned for contraction.
+            Returned if return_params is set to True.
+        svec_expand : numpy.ndarray
+            The support of the effect size posterior distributions obtained from
+            the expansion analysis..
+            Returned if return_posteriors is set to True.
+        posterior_expand : numpy.ndarray
+            The posteriors of the effect sizes when analyizing the clone pairs
+            for expansion.
+            Returned if return_posteriors is set to True.
+        svec_contract : numpy.ndarray
+            The support of the effect size posterior distributions obtained from
+            the contraction analysis..
+            Returned if return_posteriors is set to True.
+        posterior_contract : numpy.ndarray
+            The posteriors of the effect sizes when analyizing the clone pairs
+            for contraction.
+            Returned if return_posteriors is set to True.
         """
         df = df.copy()
 
         # Expansion analysis.
         self._process_dataframe(df, count_1_col=count_1_col, count_2_col=count_2_col)
-        (expand_opt_params, landscape,
-         pn1n2_s_d, pn0n0_s_d,
-         svec) = self._learning_dynamics_expansion(paras_1, paras_2, noise_model,
-                                                   legacy_code, display_landscape)
-
-        df = self._compute_p_values_and_s_features(expand_opt_params, pn1n2_s_d, svec,
+        (opt_params_expand, landscape,
+         pn1n2_s, pn0n0_s,
+         svec_expand) = self._learning_dynamics_expansion(paras_1, paras_2, noise_model,
+                                                          legacy_code, display_landscape)
+        posterior_expand = self._compute_posterior(opt_params_expand, pn1n2_s)
+        df = self._compute_p_values_and_s_features(posterior_expand, svec_expand,
                                                    df, count_1_col, count_2_col,
                                                    ci_width, suffix='expand')
 
         # Contraction analysis.
         self._process_dataframe(df, count_1_col=count_2_col, count_2_col=count_1_col)
-        (contract_opt_params, landscape,
-         pn1n2_s_d, pn0n0_s_d,
-         svec) = self._learning_dynamics_expansion(paras_2, paras_1, noise_model,
-                                                   legacy_code, display_landscape)
+        (opt_params_contract, landscape,
+         pn1n2_s, pn0n0_s,
+         svec_contract) = self._learning_dynamics_expansion(paras_2, paras_1, noise_model,
+                                                            legacy_code, display_landscape)
+        posterior_contract = self._compute_posterior(opt_params_contract, pn1n2_s)
 
-        df = self._compute_p_values_and_s_features(contract_opt_params, pn1n2_s_d, svec,
+        df = self._compute_p_values_and_s_features(posterior_contract, svec_contract,
                                                    df, count_2_col, count_1_col,
                                                    ci_width, suffix='contract',
                                                    contraction=True)
+        to_return = (df,)
+        if return_params:
+            to_return += (opt_params_expand, opt_params_contract,)
+        if return_posteriors:
+            to_return += (svec_expand, posterior_expand, svec_contract, posterior_contract,)
 
-        return df, expand_opt_params, contract_opt_params
+        if len(to_return) == 1:
+            return df
+        else:
+            return to_return
 
 # For backwards compatibility. Should be removed.
 class Expansion_Model(ExpansionModel):
