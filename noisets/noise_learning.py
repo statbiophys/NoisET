@@ -15,13 +15,13 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
-
-
+from argparse import ArgumentParser
 import os
+
 import numpy as np
-from optparse import OptionParser
+
 from noisets.noisettes import Data_Process
-from noisets.noisettes import Noise_Model
+from noisets.noisettes import NoiseModel
 
 def main():
 
@@ -32,43 +32,48 @@ def main():
     noise_model = 2 : Poisson
     """
 
-    parser = OptionParser(conflict_handler='resolve')
+    parser = ArgumentParser(conflict_handler='resolve')
 
     #Choice of Noise Model
-    parser.add_option("--NBPoisson", action = 'store_true', dest = 'Negative_bino_poisson', default= False, help = 'Choose the negative binomial + poisson noise model' )
-    parser.add_option("--NB", action = 'store_true', dest = 'Negative_bino', default= False, help = 'Choose negative binomial noise model' )
-    parser.add_option("--Poisson", action = 'store_true', dest = 'Poisson', default= False, help = 'Choose Poisson noise model' )
+    parser.add_argument("--NBPoisson", action = 'store_true', dest = 'Negative_bino_poisson', default= False, help = 'Choose the negative binomial + poisson noise model' )
+    parser.add_argument("--NB", action = 'store_true', dest = 'Negative_bino', default= False, help = 'Choose negative binomial noise model' )
+    parser.add_argument("--Poisson", action = 'store_true', dest = 'Poisson', default= False, help = 'Choose Poisson noise model' )
 
     #Input and output
-    parser.add_option('--path', type = str, metavar='PATH/TO/FILE', dest = 'path',  help='set path name to file ')
-    parser.add_option('--f1', type = str, metavar='filename1', dest = 'filename1',  help='name of first sample')
-    parser.add_option('--f2', type = str, metavar='filename2', dest = 'filename2', help='name of second sample')
+    parser.add_argument('--path', type = str, metavar='PATH/TO/FILE', dest = 'path',  help='set path name to file ', required=True)
+    parser.add_argument('--f1', type = str, metavar='filename1', dest = 'filename1',  help='name of first sample', required=True)
+    parser.add_argument('--f2', type = str, metavar='filename2', dest = 'filename2', help='name of second sample', required=True)
 
     #Characteristics of data-sets
 
-    parser.add_option('--specify', action = 'store_true', dest = 'give_details', default= False, help = 'give names of data columns')
-    parser.add_option('--freq', type = str, metavar='frequencies', dest = 'freq_label', help=' clone fractions - data - label ')
-    parser.add_option('--counts', type = str, metavar='counts', dest = 'count_label', help=' clone counts - data - label ')
-    parser.add_option('--ntCDR3', type = str, metavar='ntCDR3label', dest = 'ntCDR3_label', help=' CDR3 nucleotides sequences - data - label ')
-    parser.add_option('--AACDR3', type = str, metavar='AACDR3label', dest = 'AACDR3_label', help=' CDR3 Amino acids - data - label ')
+    parser.add_argument('--specify', action = 'store_true', dest = 'give_details', default= False, help = 'give names of data columns')
+    parser.add_argument('--freq', type = str, metavar='frequencies', dest = 'freq_label', help=' clone fractions - data - label ')
+    parser.add_argument('--counts', type = str, metavar='counts', dest = 'count_label', help=' clone counts - data - label ')
+    parser.add_argument('--ntCDR3', type = str, metavar='ntCDR3label', dest = 'ntCDR3_label', help=' CDR3 nucleotides sequences - data - label ')
+    parser.add_argument('--AACDR3', type = str, metavar='AACDR3label', dest = 'AACDR3_label', help=' CDR3 Amino acids - data - label ')
 
 
-    (options, args) = parser.parse_args()
+    arguments = parser.parse_args()
 
+    bool_sum = arguments.Negative_bino_poisson + arguments.Negative_bino + arguments.Poisson
+    if bool_sum == 0:
+        raise ValueError('A noise model has not been selected.')
+    if bool_sum > 1:
+        raise ValueError('Only one noise model must be selected.')
 
     ## Code 
     ## Load data
-    path = options.path
-    filename1 = options.filename1 # first biological replicate
-    filename2 = options.filename2 # second biological replicate
+    path = arguments.path
+    filename1 = arguments.filename1 # first biological replicate
+    filename2 = arguments.filename2 # second biological replicate
 
-    if options.give_details:
-        colnames1 = [options.freq_label, options.count_label, options.ntCDR3_label, options.AACDR3_label] #colnames that will change if you work with a different data-set
-        colnames2 = [options.freq_label, options.count_label, options.ntCDR3_label, options.AACDR3_label]
+    if arguments.give_details:
+        colnames1 = [arguments.freq_label, arguments.count_label, arguments.ntCDR3_label, arguments.AACDR3_label] #colnames that will change if you work with a different data-set
+        colnames2 = [arguments.freq_label, arguments.count_label, arguments.ntCDR3_label, arguments.AACDR3_label]
 
     else:
         colnames1 = ['Clone fraction','Clone count', 'N. Seq. CDR3', 'AA. Seq. CDR3'] #colnames that will change if you work with a different data-set
-        colnames2 = ['Clone fraction','Clone count', 'N. Seq. CDR3', 'AA. Seq. CDR3'] 
+        colnames2 = ['Clone fraction','Clone count', 'N. Seq. CDR3', 'AA. Seq. CDR3']
 
 
     # check 
@@ -84,29 +89,24 @@ def main():
 
     # Learn Noise Model parameters
 
-    init_paras_arr = [ np.asarray([ -2.046736,    1.539405,    1.234712,    6.652190,  -9.714225]), \
-                    np.asarray([-2.02192528,   0.45220384,   1.06806274, -10.18866972]), \
-                     np.asarray([-2.15206189,  -9.46699067])
-                 ]
+    init_paras_arr = [np.asarray([ -2.046736,    1.539405,    1.234712,    6.652190,  -9.714225]),
+                      np.asarray([-2.02192528,   0.45220384,   1.06806274, -10.18866972]),
+                      np.asarray([-2.15206189,  -9.46699067])
+                     ]
 
-    if options.Negative_bino_poisson:
+    if arguments.Negative_bino_poisson:
         noise_model = 0
         init_paras = init_paras_arr[noise_model]
 
-    elif options.Negative_bino:
+    elif arguments.Negative_bino:
         noise_model = 1
         init_paras = init_paras_arr[noise_model]
 
-    elif options.Poisson:
+    elif arguments.Poisson:
         noise_model = 2
         init_paras = init_paras_arr[noise_model]
 
-    null_model = Noise_Model() 
+    null_model = NoiseModel()
     null_model.learn_null_model(df, noise_model, init_paras)
 
-
-
 if __name__ == '__main__': main()
-
-    
-
